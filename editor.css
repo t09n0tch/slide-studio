@@ -3,11 +3,81 @@
 .inspector{padding:0 18px 30px}
 .inspector .panel-heading{position:sticky;top:0;z-index:3;background:#fcfcfa;padding-top:20px;padding-bottom:16px}
 .save-status{white-space:nowrap}
-.note-modes{display:flex;gap:4px;background:#eef1e8;padding:4px;border-radius:8px;margin:0 0 10px;position:sticky;top:53px;z-index:2}
+.canvas-toolbar{height:auto;min-height:62px;flex-wrap:wrap;padding:12px 0 8px;gap:8px}
+.canvas-toolbar>div:first-child{gap:9px;flex-wrap:wrap}
+.page-tools{margin-left:auto;flex-shrink:0}
+.page-tools button{font-size:12px;padding:6px 8px;white-space:nowrap}
+.page-history{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:0 0 9px}
+.page-history button{font-size:11px;padding:6px 9px;white-space:nowrap}
+.page-history span{font-size:10px;color:var(--muted);line-height:1.5}
+.notes-visibility{border:1px solid var(--line);border-radius:8px;background:#f4f7ee;padding:11px 12px;margin-bottom:13px}
+.notes-visibility .check-label{margin:0;font-size:12px;line-height:1.6;align-items:flex-start}
+.notes-visibility input{flex-shrink:0;margin:3px 0 0}
+.notes-visibility .micro{font-size:11px;margin:6px 0 0;line-height:1.65}
+.slide-preview.source-only{grid-template-columns:1fr}
+.slide-preview.source-only .preview-notes{display:none}
+.preview-caption #sourceTime{color:var(--teal);margin-right:9px;white-space:nowrap}
+.extraction-option{border-top:1px solid var(--line);padding-top:12px;margin-top:15px}
+.extraction-option .check-label{margin:0;align-items:flex-start;line-height:1.6;font-size:13px}
+.extraction-option input{flex-shrink:0;margin-top:3px}
+.extraction-option .micro{margin:6px 0 0 24px;font-weight:400}
+.extract-notice{background:#edf2e4;border-radius:7px;padding:10px 12px;color:#3f604b;font-size:12px}
+.lecture-strip{height:86px}
+.lecture-strip>.lecture-title-field:first-child{display:flex;flex-direction:column;align-items:flex-start;gap:5px;flex:1;min-width:160px}
+.lecture-title-field label{font-size:10px;font-weight:500;color:var(--muted);margin:0 0 0 2px}
+#lectureTitle{border:1px solid #c7d3c2;border-radius:7px;background:#fff;padding:8px 11px;width:min(530px,100%);font-size:17px;font-weight:600;box-shadow:inset 0 1px 2px #25351a04}
+#lectureTitle:hover{border-color:#92ae88}
+.workspace{min-height:0}
+.editor-grid{height:calc(100% - 86px)}
+.library .panel-heading{padding:13px 13px 8px}
+.library-controls{margin:0 10px 10px;padding:8px;background:#eef2e8;border:1px solid #d9e2d1;border-radius:9px;flex-shrink:0}
+.library-controls .page-tools{margin:0;display:grid;grid-template-columns:1fr 30px 30px 1fr;gap:4px}
+.library-controls .page-tools button{font-size:11px;padding:5px 3px;min-width:0;line-height:20px}
+.library-controls .page-history{display:grid;grid-template-columns:1fr 1fr;margin:6px 0 5px;gap:4px}
+.library-controls .page-history button{font-size:10px;padding:6px 2px}
+.library-controls #historyHint{font-size:9px;line-height:1.5;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+.library-caption{font-size:10px;line-height:1.7;margin:0 13px 11px;flex-shrink:0}
+.slide-list{position:relative;overflow-anchor:none;scroll-behavior:auto;min-height:0;overflow-x:hidden}
+.slide-item{grid-template-columns:16px minmax(0,1fr);min-width:0}
+.slide-item>div{min-width:0}
+.slide-item .item-title{max-width:100%}
+.item-meta{gap:4px;white-space:nowrap}.item-meta span:last-child{flex-shrink:0}
+.slide-item.dragging{opacity:.35}
+.drop-indicator{position:absolute;left:8px;right:8px;height:4px;border-radius:3px;background:#e06034;box-shadow:0 0 0 2px #fff;pointer-events:none;z-index:5}
+.drop-indicator::before,.drop-indicator::after{content:'';position:absolute;top:-2px;width:8px;height:8px;border-radius:50%;background:#e06034}
+.drop-indicator::before{left:-3px}.drop-indicator::after{right:-3px}
+.canvas-toolbar{min-height:40px;padding:9px 0 5px}
+.inspector .panel-heading{padding-top:9px;padding-bottom:9px}
+.inspector .panel-heading h2{font-size:12px;font-weight:500}
+.notes-visibility{padding:8px 10px;margin-bottom:8px}
+.notes-visibility .micro{font-size:10px;margin-top:4px}
+.note-size-controls{display:flex;align-items:center;gap:5px;margin:0 0 0 auto;padding:0}
+.note-size-controls .check-label{font-size:10px;font-weight:400;margin:0;gap:3px;white-space:nowrap}
+.note-size-controls input[type=checkbox]{width:12px;height:12px;margin:0}
+.note-size-input{display:flex;align-items:center;gap:3px;font-size:10px}
+.note-size-input button{font-size:10px;padding:4px 3px;min-width:23px;line-height:17px}
+.note-size-input input{width:43px;padding:4px 1px;text-align:center;font-size:11px;font-variant-numeric:tabular-nums}
+.note-size-input input::-webkit-inner-spin-button{display:none}
+.crop-dialog{width:min(880px,95vw)}
+.crop-stage{display:flex;align-items:center;justify-content:center;background:#16201d;border-radius:8px;overflow:hidden;line-height:0}
+#cropPreview{width:auto;height:auto;max-width:100%;max-height:52vh;object-fit:contain;touch-action:none;cursor:crosshair;border-radius:0;background:none}
+#cropSize{margin:7px 0;font-size:11px}
+.crop-advanced{margin:10px 0}.crop-inputs label{font-size:11px}
+.preview-notes{padding:.625cqw .8333cqw}
+.preview-notes #previewLabel{font-size:.9375cqw;font-weight:400;line-height:1.2;margin:0;color:var(--teal)}
+.slide-preview.supplement .preview-notes{padding:.625cqw 3.3333cqw}
+.preview-notes footer{left:.8333cqw;right:.8333cqw;bottom:1.25cqw;font-size:.9375cqw;padding-top:0}
+.slide-preview.supplement footer{left:3.3333cqw;right:3.3333cqw}
+.preview-notes .preview-content.planned{position:absolute;inset:0;margin:0;max-height:none;overflow:hidden;font-family:'Pretendard','Noto Sans',sans-serif;font-kerning:none;font-variant-ligatures:none}
+.preview-line,.preview-decoration{position:absolute;margin:0;padding:0}
+.preview-line{line-height:1.15;white-space:pre;font-weight:400;color:#17353d}
+.preview-line a{color:var(--teal);text-decoration:underline}
+@media(max-width:850px){.lecture-strip{height:auto}.editor-grid{height:auto}.library-controls{margin:0 5px 8px;padding:5px}.library-controls .page-tools{grid-template-columns:1fr 24px 24px 1fr;gap:2px}.library-controls .page-history button{font-size:9px}.note-toolbar,.note-modes{position:static}}
+.note-modes{display:flex;gap:4px;background:#eef1e8;padding:4px;border-radius:8px;margin:0 0 10px;position:static}
 .note-modes button{flex:1;font-size:12px;background:transparent;border-color:transparent;padding:7px 8px;color:#7b8c7d}
 .note-modes button.active{background:#fff;color:#234e40;box-shadow:0 1px 4px #273f2510}
-.note-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:4px;padding:9px;background:#fff;border:1px solid #dce5d8;border-bottom-color:#e9eee4;border-radius:9px 9px 0 0;position:sticky;top:100px;z-index:2}
-.note-toolbar #noteFormat{width:99px;padding:5px 6px;font-size:12px;line-height:21px;border:0;background:#f3f5ef;margin-right:3px}
+.note-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:4px;padding:9px;background:#fff;border:1px solid #dce5d8;border-bottom-color:#e9eee4;border-radius:9px 9px 0 0;position:static}
+.note-toolbar #noteFormat{width:75px;padding:5px 6px;font-size:12px;line-height:21px;border:0;background:#f3f5ef;margin-right:3px}
 .editor-tool{min-width:27px;padding:4px 6px;font-size:12px;font-weight:500;border:1px solid transparent;border-radius:5px;line-height:21px}
 .editor-tool.active{color:#1a5741;background:#e4efda;border-color:#c4d7ad}
 .note-editor,.markdown-source{background:white;border:1px solid #dce5d8;border-top:0;border-radius:0 0 9px 9px;min-height:430px}
@@ -62,3 +132,52 @@
 @media(min-width:1700px){.editor-grid{grid-template-columns:250px minmax(400px,1fr) 400px}.note-editor .tiptap{font-size:15px}}
 @media(max-width:1150px){.editor-grid{grid-template-columns:180px minmax(350px,1fr) 310px}.inspector{padding:0 12px 25px}.note-editor .tiptap{padding:18px 13px}.note-help span{max-width:155px}}
 @media(max-width:850px){.editor-grid{grid-template-columns:150px minmax(340px,1fr)}.inspector{padding:0 25px 25px}.note-toolbar,.note-modes,.inspector .panel-heading{position:static}.note-editor .tiptap{min-height:300px}.note-help span{max-width:none}}
+/* Keep video controls at the lower right while notes scroll independently. */
+.inspector{display:flex;flex-direction:column;overflow:hidden;padding:0;min-width:0}
+.inspector-body{flex:1;min-height:0;overflow:auto;padding:0 14px 18px;scrollbar-gutter:stable}
+.inspector .panel-heading{flex-shrink:0}
+.inspector .video-panel{flex-shrink:0;margin:0;padding:7px 9px 4px;background:#fcfcfa;border-top:1px solid var(--line)}
+.video-heading{margin-bottom:5px;min-height:20px}
+.video-heading h2{font-size:10px;font-weight:500;color:var(--muted)}
+.video-heading button{padding:2px 6px;font-size:10px}
+.video-stage{min-height:0;border-radius:5px;background:#121512;line-height:0}
+.video-stage video{width:100%;height:auto;max-height:none;object-fit:contain}
+.seek-row{gap:3px;padding-top:5px;flex-wrap:nowrap;justify-content:center}
+.seek-row button{font-size:10px;padding:4px 6px}
+.seek-row #seekInput{width:62px;font-size:11px;padding:4px;text-align:center}
+.video-actions{display:flex;gap:4px;margin-top:5px}
+.video-actions button{flex:1;min-width:0;padding:6px 3px;font-size:10px;white-space:nowrap;border-color:#c6d4c0;background:#fff}
+.video-actions #cropButton{color:#234e40;background:#edf2e6;border-color:#b4c7a7}
+.video-panel #cropDescription{font-size:9px;line-height:1.4;margin:4px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slide-preview{position:relative}
+.slide-preview.source-only{display:block}
+.slide-preview.source-only .preview-source{position:absolute;inset:0 0 2.916667cqw}
+.source-footer{position:absolute;left:1.25cqw;right:.833333cqw;top:53.645833cqw;color:#647a7f;font-size:.9375cqw;line-height:1.4;display:flex;justify-content:space-between;align-items:baseline}
+.source-footer #sourcePage{width:3.333333cqw}
+.crop-snap-row{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:6px 0}
+.crop-snap-row .check-label,.crop-bulk .check-label{margin:0;font-size:12px;font-weight:500}
+#cropSnapStatus{font-size:10px;color:#718273}
+#cropSnapStatus.snapped{color:#087b99;font-weight:600}
+.crop-bulk{background:#eef3e8;border:1px solid #dce6d3;border-radius:7px;padding:10px 12px;margin-top:11px}
+.crop-bulk .micro{font-size:11px;margin:5px 0 0 24px}
+@media(max-width:1150px){.inspector-body{padding-left:10px;padding-right:10px}.video-actions button{font-size:9px}}
+@media(max-width:850px){.inspector{display:grid;grid-template-columns:minmax(260px,1fr) minmax(240px,320px);align-items:start}.inspector-body{max-height:70vh}.inspector .video-panel{position:sticky;top:0;border-left:1px solid var(--line);border-top:0}.video-stage video{max-height:none}.note-modes,.note-toolbar{position:static}}
+
+/* One opaque sticky surface covers all gaps above the scrolling note text. */
+.inspector>.panel-heading{position:static;padding-left:14px;padding-right:14px}
+.note-chrome{position:sticky;top:0;z-index:4;isolation:isolate;background:#fcfcfa}
+.note-chrome .note-modes{position:static;margin-bottom:6px}
+.note-chrome .note-toolbar{position:static;margin:0}
+.inspector .note-options{flex-shrink:0;padding:6px 9px 0;margin:0;border-top:1px solid var(--line);background:#fcfcfa}
+.note-options #noteOptionsControls{max-height:20vh;overflow:auto;padding:0 4px 10px}
+.note-options label{margin:7px 0 4px;font-size:11px}
+.note-options select{padding:6px}.note-options textarea{padding:7px;margin:0;min-height:70px;font-size:12px}
+@media(max-width:1150px){.note-toolbar{padding:7px;gap:3px}.note-toolbar #noteFormat{width:68px}.note-size-controls{gap:3px}}
+@media(max-width:850px){.inspector>.panel-heading{grid-column:1/-1}.inspector-body{grid-column:1;grid-row:2 / span 2}.inspector .note-options{grid-column:2;grid-row:2}.inspector .video-panel{grid-column:2;grid-row:3}.note-chrome{position:sticky}.note-options #noteOptionsControls{max-height:30vh}}
+
+/* Shared UI-style Korean type, normal tracking, and comfortable leading. */
+.note-editor .tiptap,.preview-content,.preview-notes,.source-footer{font-family:'Pretendard','Noto Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:normal;word-spacing:normal;font-kerning:none;font-variant-ligatures:none}
+.note-editor .tiptap{font-weight:400;line-height:1.8}
+.note-editor .tiptap h1{letter-spacing:normal}
+.preview-line{line-height:1.4;color:#263c36}
+.thumbnail.supplement-thumbnail{aspect-ratio:16/9;display:block;padding:0;object-fit:contain;background:#f7fafa}

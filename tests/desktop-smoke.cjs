@@ -55,6 +55,7 @@ async function poll(operation, timeout = 60000) {
     });
     await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].hide());
     await page.locator('#videoFile').setInputFiles(video);
+    await page.locator('#aiSkip').click();
     await page.waitForFunction(() => !document.getElementById('progressDialog').open && document.querySelectorAll('.slide-item').length === 3, {}, { timeout: 60000 });
     assert.equal(await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isVisible()), false);
     assert.equal(await page.evaluate(() => window.reached100), true);

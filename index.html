@@ -4,18 +4,18 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'none'; img-src 'self' data: blob:; media-src blob:; font-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Slide Studio · 나만의 강의자료</title>
-<link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="editor.css"><link rel="stylesheet" href="welcome.css">
+<link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="editor.css"><link rel="stylesheet" href="welcome.css"><link rel="stylesheet" href="ai.css">
 <script defer src="vendor/jszip.min.js"></script><script defer src="vendor/pptxgen.bundle.js"></script><script defer src="vendor/pdf-lib.min.js"></script><script defer src="vendor/fontkit.umd.js"></script><script defer src="vendor/font-data.js"></script><script defer src="vendor/font-latin-data.js"></script>
 <script defer src="vendor/font-bold-data.js"></script><script defer src="vendor/notes-editor.js"></script>
-<script defer src="js/core.js"></script><script defer src="js/export.js"></script><script defer src="js/app.js"></script>
+<script defer src="js/core.js"></script><script defer src="js/export.js"></script><script defer src="js/ai.js"></script><script defer src="js/ai-ui.js"></script><script defer src="js/app.js"></script>
 </head>
 <body class="welcome-screen">
 <header class="app-header">
  <a class="brand" href="index.html" aria-label="Slide Studio 홈"><img src="icon.svg" width="36" height="36" alt=""><span>Slide Studio<small>나만의 강의자료</small></span></a>
- <div class="header-middle"><span class="local-dot"></span> 영상은 내 컴퓨터에만</div>
+ <div class="header-middle"><span class="local-dot"></span> 영상 추출은 내 컴퓨터에서</div>
  <nav class="header-actions" aria-label="파일 작업">
   
-  <button id="exportPptx" disabled>PPTX ↓</button><button id="exportPdf" class="primary" disabled>PDF ↓</button>
+  <button id="assistantOpen" disabled>AI 보완</button><button id="exportPptx" disabled>PPTX ↓</button><button id="exportPdf" class="primary" disabled>PDF ↓</button>
  </nav>
 </header>
 <main id="welcome" class="welcome">
@@ -26,20 +26,27 @@
  </button>
 </main>
 <section id="workspace" class="workspace" hidden>
- <div class="lecture-strip"><div><input id="lectureTitle" aria-label="강의자료 제목" maxlength="100" placeholder="강의자료 제목"><span id="videoMeta" class="muted"></span></div><div class="strip-actions"><button id="extract" class="primary" disabled>자동 추출</button><button id="extractSettings" class="quiet" disabled>추출 설정</button><button id="newLecture" class="quiet">새 강의</button></div></div>
+ <div class="lecture-strip"><div class="lecture-title-field"><label for="lectureTitle">강의자료 제목</label><input id="lectureTitle" aria-label="강의자료 제목" maxlength="100" placeholder="강의자료 제목을 입력하세요"></div><div class="strip-actions"><button id="extract" class="primary" disabled>자동 추출</button><button id="extractSettings" class="quiet" disabled>추출 설정</button><button id="newLecture" class="quiet">새 강의</button></div></div>
  <div class="editor-grid">
-  <aside class="library"><div class="panel-heading"><h2>슬라이드 <span id="slideCount">0</span></h2><button id="addSupplement" class="icon-button" title="보충 설명 페이지 추가" aria-label="보충 설명 페이지 추가">＋</button></div><p class="library-caption">체크한 페이지만 내보냅니다</p><div id="slideList" class="slide-list"></div><div class="library-bottom"><button id="undo" class="quiet" disabled>↶ 되돌리기</button></div></aside>
-  <div class="canvas-column"><div class="canvas-toolbar"><div><span id="pagePosition" class="muted">페이지를 추가해 주세요</span><span id="pageKind" class="kind-label"></span></div><div class="page-tools"><button id="moveUp" class="icon-button" title="앞으로 이동" aria-label="앞으로 이동" disabled>↑</button><button id="moveDown" class="icon-button" title="뒤로 이동" aria-label="뒤로 이동" disabled>↓</button><button id="deleteSlide" class="quiet danger" disabled>삭제</button></div></div>
-   <div class="preview-wrap"><div id="slidePreview" class="slide-preview"><div id="previewSource" class="preview-source"><img id="previewImage" alt="선택한 원본 슬라이드"><span id="previewEmpty">영상에서 화면을 추가해 주세요</span></div><div id="previewNotes" class="preview-notes"><div id="previewLabel">강의 노트</div><div id="previewBody" class="preview-content"></div><footer><button id="previewTime" type="button" class="timestamp-button" title="이 슬라이드가 시작한 시각으로 이동"></button><span id="previewPage"></span></footer></div></div></div>
-   <div class="preview-caption" id="previewCaption">직접 작성한 노트는 PPTX에서 편집할 수 있습니다.</div>
-   <section class="video-panel"><div class="video-heading"><h2>원본 영상 · 필요할 때 화면 보완</h2><button id="toggleVideo" class="quiet">접기</button></div><div id="videoControls"><div class="video-stage"><video id="video" controls preload="auto" playsinline></video><div id="videoPlaceholder">영상을 열면 자동 추출을 시작합니다. 추출 후 원하는 시각의 화면으로 교체할 수도 있습니다.</div></div><div class="seek-row"><button class="quiet" id="backSecond" title="1초 전">−1초</button><input id="seekInput" type="text" value="00:00" aria-label="이동할 영상 시각"><button id="seekButton">이동</button><button class="quiet" id="forwardSecond" title="1초 후">+1초</button><span class="seek-spacer"></span><button id="captureNew" disabled>현재 화면 추가</button><button id="replaceFrame" disabled>선택 화면 교체</button></div><p class="micro" id="cropDescription">슬라이드 영역을 설정하면 검은 여백을 제외할 수 있습니다.</p><button id="cropButton" class="text-button" disabled>슬라이드 영역 설정</button></div></section>
+  <aside class="library"><div class="panel-heading"><h2>슬라이드 <span id="slideCount">0</span></h2><button id="addSupplement" class="icon-button" title="보충 설명 페이지 추가" aria-label="보충 설명 페이지 추가">＋</button></div>
+   <div class="library-controls" role="group" aria-label="선택한 페이지 작업"><div class="page-tools"><button id="duplicateSlide" title="노트와 설정을 함께 복사하여 바로 다음에 추가" disabled>복사</button><button id="moveUp" class="icon-button" title="앞으로 이동" aria-label="앞으로 이동" disabled>↑</button><button id="moveDown" class="icon-button" title="뒤로 이동" aria-label="뒤로 이동" disabled>↓</button><button id="deleteSlide" class="danger" disabled>삭제</button></div><div class="page-history"><button id="undo" disabled>↶ 실행 취소</button><button id="redo" disabled>↷ 다시 실행</button></div><span id="historyHint">삭제·복사·순서 변경을 되돌릴 수 있습니다.</span></div>
+   <p class="library-caption">체크한 페이지만 내보냅니다.<br>끌어서 색 막대 위치에 놓으면 이동합니다.</p><div id="slideList" class="slide-list"></div><span id="dragStatus" class="sr-only" aria-live="polite"></span>
+  </aside>
+  <div class="canvas-column"><div class="canvas-toolbar"><div><span id="pagePosition" class="muted">페이지를 추가해 주세요</span><span id="pageKind" class="kind-label"></span></div></div>
+   <div class="preview-wrap"><div id="slidePreview" class="slide-preview"><div id="previewSource" class="preview-source"><img id="previewImage" alt="선택한 원본 슬라이드"><span id="previewEmpty">영상에서 화면을 추가해 주세요</span></div><div id="previewNotes" class="preview-notes"><div id="previewLabel">강의 노트</div><div id="previewBody" class="preview-content"></div><footer><button id="previewTime" type="button" class="timestamp-button" title="이 슬라이드가 시작한 시각으로 이동"></button><span id="previewPage"></span></footer></div><footer id="sourceFooter" class="source-footer" hidden><button id="sourceTime" type="button" class="timestamp-button" title="이 슬라이드가 시작한 시각으로 이동"></button><span id="sourcePage"></span></footer></div></div>
+   <div class="preview-caption"><span id="previewCaption">직접 작성한 노트는 PPTX에서 편집할 수 있습니다.</span></div>
+
   </div>
-  <aside class="inspector"><div class="panel-heading"><h2>나의 강의노트</h2><span id="saveStatus" class="save-status">준비됨</span></div>
+  <aside class="inspector"><div class="panel-heading"><h2>나의 강의노트</h2><span id="saveStatus" class="save-status">준비됨</span></div><div class="inspector-body">
    <div id="noSelection" class="no-selection">슬라이드를 선택하면<br>여기에 자유롭게 노트를 적을 수 있습니다.</div>
    <section id="notePanel" hidden>
+    <div class="notes-visibility"><label class="check-label"><input id="showNotes" type="checkbox" checked aria-describedby="notesVisibilityHelp">이 페이지에 우측 강의노트 표시</label><p id="notesVisibilityHelp" class="micro">끄면 이 페이지의 우측 노트 칸이 사라지고 원본 화면이 커집니다.</p></div>
+
+    <div class="note-chrome">
     <div class="note-modes" role="group" aria-label="노트 편집 모드"><button id="richMode" type="button" class="active" aria-pressed="true">서식 편집</button><button id="markdownMode" type="button" aria-pressed="false">마크다운</button></div>
     <div id="noteToolbar" class="note-toolbar" role="toolbar" aria-label="노트 서식 도구">
      <label class="sr-only" for="noteFormat">문단 스타일</label><select id="noteFormat" aria-label="문단 스타일"><option value="paragraph">본문</option><option value="1">제목 1</option><option value="2">제목 2</option><option value="3">제목 3</option></select>
+     <div class="note-size-controls" role="group" aria-label="슬라이드 노트 글자 크기"><label class="check-label" title="전체 노트 길이에 맞춰 글자 크기 자동 선택"><input id="autoNoteFont" type="checkbox" checked>자동</label><div class="note-size-input"><button id="noteFontSmaller" type="button" aria-label="슬라이드 노트 글자 작게">A−</button><input id="noteFontSize" type="number" min="8" max="36" step="0.5" value="18" aria-label="슬라이드 노트 글자 크기" aria-describedby="noteFontHint"><span>pt</span><button id="noteFontLarger" type="button" aria-label="슬라이드 노트 글자 크게">A＋</button></div></div>
      <button type="button" class="editor-tool" data-command="bold" title="굵게 · ⌘/Ctrl+B" aria-label="굵게" aria-pressed="false"><b>B</b></button>
      <button type="button" class="editor-tool" data-command="italic" title="기울임 · ⌘/Ctrl+I" aria-label="기울임" aria-pressed="false"><i>I</i></button>
      <button type="button" class="editor-tool" data-command="strike" title="취소선" aria-label="취소선" aria-pressed="false"><s>S</s></button>
@@ -51,19 +58,78 @@
      <button type="button" class="editor-tool" data-command="horizontalRule" title="구분선" aria-label="구분선">―</button>
      <button type="button" class="editor-tool" data-command="undo" title="노트 실행 취소" aria-label="노트 실행 취소">↶</button><button type="button" class="editor-tool" data-command="redo" title="노트 다시 실행" aria-label="노트 다시 실행">↷</button>
     </div>
+    </div><p id="noteFontHint" class="sr-only" role="status" aria-live="polite">전체 노트의 길이에 맞춰 글자 크기를 정합니다.</p>
     <div id="noteEditor" class="note-editor"></div><textarea id="markdownSource" class="markdown-source" aria-label="마크다운 노트 원문" maxlength="100000" placeholder="# 제목&#10;&#10;여기에 노트를 적어 보세요." hidden></textarea>
     <div class="note-help"><span>일반 문서처럼 쓰거나 마크다운으로 입력하세요.</span><button id="importNotes" type="button" class="text-button">노트 불러오기</button></div>
     <p class="micro">긴 노트는 PPTX·PDF에서 다음 페이지로 이어집니다.</p>
-    <details class="note-options"><summary>추가 설정</summary><label for="kind">페이지 종류</label><select id="kind"><option value="original">원본 + 강의노트</option><option value="question">문제</option><option value="solution">풀이와 해설</option><option value="supplement">보충 설명</option></select><label for="speakerNotes">발표자 노트 · PPTX에만 포함</label><textarea id="speakerNotes" rows="4" placeholder="발표자만 볼 자세한 메모"></textarea></details>
+
+   </section>
+   </div>
+   <section class="note-options" id="noteOptions" hidden><div class="video-heading"><h2>추가 설정</h2><button id="toggleNoteOptions" type="button" class="quiet" aria-controls="noteOptionsControls" aria-expanded="false" disabled>펼치기</button></div><div id="noteOptionsControls" hidden><label for="kind">페이지 종류</label><select id="kind"><option value="original">원본 + 강의노트</option><option value="question">문제</option><option value="solution">풀이와 해설</option><option value="supplement">보충 설명</option></select><label for="speakerNotes">발표자 노트 · PPTX에만 포함</label><textarea id="speakerNotes" rows="4" placeholder="발표자만 볼 자세한 메모"></textarea></div></section>
+   <section class="video-panel" aria-label="원본 영상"><div class="video-heading"><h2>원본 영상</h2><button id="toggleVideo" class="quiet" aria-controls="videoControls" aria-expanded="true">접기</button></div>
+    <div id="videoControls"><div class="video-stage"><video id="video" controls preload="auto" playsinline></video><div id="videoPlaceholder">영상에서 원하는 화면을 추가하거나 교체할 수 있습니다.</div></div>
+     <div class="seek-row"><button class="quiet" id="backSecond" title="1초 전">−1초</button><input id="seekInput" type="text" value="00:00" aria-label="이동할 영상 시각"><button id="seekButton">이동</button><button class="quiet" id="forwardSecond" title="1초 후">+1초</button></div>
+     <div class="video-actions"><button id="captureNew" disabled>현재 화면 추가</button><button id="replaceFrame" disabled>선택 화면 교체</button><button id="cropButton" disabled>슬라이드 영역 설정</button></div>
+     <p class="micro" id="cropDescription">검은 여백을 제외할 영역을 설정하세요.</p>
+    </div>
    </section>
   </aside>
  </div>
 </section>
-<footer class="status-bar"><span id="status">영상과 노트는 외부 서버로 전송되지 않습니다.</span><span>v0.4.0 · 로컬 실행</span></footer>
+<footer class="status-bar"><span id="status">영상 추출은 로컬에서 처리합니다. AI 보완은 선택한 슬라이드를 전송합니다.</span><span>v0.9.0 · 로컬 실행</span></footer>
 <input id="videoFile" type="file" accept="video/*,.mp4,.m4v,.webm,.mov" hidden><input id="notesFile" type="file" accept=".md,.markdown,.txt,text/plain,text/markdown" hidden>
-<dialog id="cropDialog" class="settings-dialog"><div class="dialog-title"><h2>슬라이드 영역</h2><button id="closeCrop" class="icon-button" aria-label="닫기">×</button></div><p>슬라이드와 교수님 필기가 모두 들어오도록 조정해 주세요.</p><canvas id="cropPreview"></canvas><div class="crop-inputs"><label>X<input id="cropX" type="number" min="0"></label><label>Y<input id="cropY" type="number" min="0"></label><label>너비<input id="cropW" type="number" min="8"></label><label>높이<input id="cropH" type="number" min="8"></label></div><div class="dialog-actions"><button id="fullCrop">전체 화면</button><button id="autoCrop">검은 여백 찾기</button><button id="applyCrop" class="primary">영역 적용</button></div><p class="micro">영역 변경은 이후 추출·캡처부터 적용됩니다. 저장된 화면은 그대로 유지됩니다.</p></dialog>
-<dialog id="extractDialog" class="settings-dialog compact"><div class="dialog-title"><h2>자동 추출 설정</h2><button id="closeExtract" class="icon-button" aria-label="닫기">×</button></div><p>선택한 슬라이드 영역에서 화면 전환을 찾아 목록을 자동으로 구성합니다. 짧게 등장하는 화면이 빠졌다면 간격과 감도를 조정해 보세요.</p><div class="two-fields"><label>시작 시각<input id="rangeStart" value="00:00"></label><label>끝 시각<input id="rangeEnd" value="00:00"></label></div><label>화면 확인 간격<select id="sampleInterval"><option value="0.5">0.5초 · 매우 자세히</option><option value="1" selected>1초 · 기본</option><option value="2">2초</option><option value="3">3초</option><option value="5">5초 · 빠르게</option></select></label><label>감도 <span id="sensitivityText">이 강의에 맞춘 기본값</span><input type="range" id="sensitivity" min="3" max="100" value="40"></label><p class="micro">값이 낮을수록 작은 변화도 다른 화면으로 찾습니다.</p><label class="check-label"><input id="mergeRepeated" type="checkbox" checked> 비슷한 반복 화면 묶기</label><label class="check-label"><input id="refineFrames" type="checkbox" checked> 전환 직전의 필기 화면 더 자세히 찾기</label><label class="check-label"><input id="splitExercises" type="checkbox" checked> 문제·풀이 화면 자동 분리</label><p class="micro">이 강의의 연한 파란 문제 상자 형식에서 처음·완성 화면을 나눕니다. 정답이 숨겨져 있는지 확인해 주세요.</p><label class="check-label"><input id="excludeEnding" type="checkbox" checked> 짧고 내용이 적은 마지막 화면 자동 제외</label><p id="extractNotice" class="micro">자동으로 목록을 구성합니다. 필요한 경우 추출 후 화면을 수정할 수 있습니다.</p><button id="startExtract" class="primary full-width">자동 추출 시작</button></dialog>
+<dialog id="cropDialog" class="settings-dialog crop-dialog" aria-labelledby="cropTitle">
+ <div class="dialog-title"><h2 id="cropTitle">슬라이드 영역</h2><button id="closeCrop" class="icon-button" aria-label="닫기">×</button></div>
+ <p>빨간 테두리의 모서리·가장자리를 끌어 크기를 조절하세요. 안쪽을 끌면 이동하고, 바깥쪽을 끌면 새 영역을 만듭니다.</p>
+ <div class="crop-stage"><canvas id="cropPreview" aria-label="마우스로 슬라이드 영역 조절"></canvas></div><p id="cropSize" class="micro"></p>
+ <div class="crop-snap-row"><label class="check-label"><input id="cropSnap" type="checkbox" checked>영상 끝·검은 여백 경계에 붙이기</label><span id="cropSnapStatus" role="status">Alt/Option을 누르면 잠시 해제</span></div>
+ <details class="crop-advanced"><summary>숫자로 조정</summary><div class="crop-inputs"><label>가로 위치<input id="cropX" type="number" min="0"></label><label>세로 위치<input id="cropY" type="number" min="0"></label><label>너비<input id="cropW" type="number" min="8"></label><label>높이<input id="cropH" type="number" min="8"></label></div></details>
+ <div class="crop-bulk"><label class="check-label"><input id="applyCropAll" type="checkbox" checked><span id="applyCropAllLabel">기존 슬라이드 전체에도 적용</span></label><p id="cropApplyHelp" class="micro">각 화면을 캡처했던 시각에서 다시 저장합니다. 노트·시작 시각·순서를 유지하며, 한 번에 실행 취소할 수 있습니다.</p></div>
+ <div class="dialog-actions"><button id="fullCrop">전체 화면</button><button id="autoCrop">검은 여백 찾기</button><button id="applyCrop" class="primary">영역 적용</button></div>
+</dialog>
+<dialog id="extractDialog" class="settings-dialog compact" aria-labelledby="extractTitle">
+ <div class="dialog-title"><h2 id="extractTitle">슬라이드 추출 설정</h2><button id="closeExtract" class="icon-button" aria-label="닫기">×</button></div>
+ <p>원하는 결과를 골라 주세요. 설정을 바꿔도 이미 작성한 노트는 유지됩니다.</p>
+ <div class="two-fields"><label>시작 시각<input id="rangeStart" value="00:00"></label><label>끝 시각<input id="rangeEnd" value="00:00"></label></div>
+ <label>화면 확인 간격<select id="sampleInterval" aria-describedby="intervalHelp"><option value="0.5">0.5초 · 짧은 화면까지 자세히</option><option value="1" selected>1초 · 기본</option><option value="2">2초</option><option value="3">3초</option><option value="5">5초 · 빠르게 훑기</option></select></label><p id="intervalHelp" class="micro"></p>
+ <label>화면 나누기<select id="sensitivity" aria-describedby="sensitivityHelp"><option value="detailed">자세히 나누기 · 작은 변화도 구분</option><option value="balanced" selected>기본 · 권장</option><option value="distinct">큰 전환만 나누기 · 비슷한 화면은 유지</option></select></label><p id="sensitivityHelp" class="micro" aria-live="polite"></p>
+ <div class="extraction-option"><label class="check-label"><input id="mergeRepeated" type="checkbox" checked aria-describedby="mergeHelp">다시 나온 같은 슬라이드는 한 장으로 합치기</label><p id="mergeHelp" class="micro">비슷한 화면을 묶고 필기가 많은 화면을 우선 남깁니다. 끄면 다시 등장한 화면도 따로 저장합니다.</p></div>
+ <div class="extraction-option"><label class="check-label"><input id="refineFrames" type="checkbox" checked aria-describedby="refineHelp">교수님이 필기를 마친 화면 찾기</label><p id="refineHelp" class="micro">다음 슬라이드로 넘어가기 직전까지 자세히 확인합니다. 필기 보존에 유리하지만 시간이 더 걸립니다. 끄면 확인 간격에 맞춰 찾은 화면을 저장합니다.</p></div>
+ <div class="extraction-option"><label class="check-label"><input id="splitExercises" type="checkbox" checked aria-describedby="exerciseHelp">문제와 풀이 화면을 각각 남기기</label><p id="exerciseHelp" class="micro">연한 파란 문제 상자가 있는 화면에서 풀이가 추가되기 전·후를 나눕니다. 다른 형식은 자동으로 나누지 못할 수 있습니다.</p></div>
+ <div class="extraction-option"><label class="check-label"><input id="excludeEnding" type="checkbox" checked aria-describedby="endingHelp">끝인사 같은 짧은 마지막 화면 빼기</label><p id="endingHelp" class="micro">내용이 적은 짧은 마지막 화면을 자동으로 체크 해제합니다. 목록에는 남으므로 다시 체크해 내보낼 수 있습니다.</p></div>
+ <p id="extractNotice" class="extract-notice">자동으로 목록을 구성합니다.</p><button id="startExtract" class="primary full-width">슬라이드 추출 시작</button>
+</dialog>
 <dialog id="progressDialog" class="progress-dialog"><div class="progress-icon">◌</div><h2 id="progressTitle">화면을 확인하고 있습니다</h2><p id="progressDetail"></p><div class="progress-summary"><span id="progressPercent" class="progress-percent" aria-live="polite">0%</span><span id="progressEta" class="progress-eta">남은 시간 계산 중</span></div><progress id="progressBar" max="100" value="0" aria-label="슬라이드 준비 진행률"></progress><button id="cancelWork">취소</button></dialog>
+<dialog id="aiDialog" class="settings-dialog ai-dialog" aria-labelledby="aiTitle">
+ <div class="dialog-title"><h2 id="aiTitle">강의자료를 어떻게 보완할까요?</h2><button id="aiClose" class="icon-button" aria-label="AI 보완 닫기">×</button></div>
+ <div id="aiChoices" class="ai-choices">
+  <button id="aiChoosePaid" class="ai-choice"><strong>ChatGPT로 자동 보완</strong><span>지원되는 Plus·Pro 계정으로 로그인</span><small>추출부터 우측 노트·보완 슬라이드까지 이어서 만듭니다.</small></button>
+  <button id="aiChooseFree" class="ai-choice"><strong>무료 계정으로 보완</strong><span>ChatGPT에 자료를 보내고 답변 한 번 붙여넣기</span><small>첨부 이미지와 요청문은 앱이 준비하고, 결과도 자동 배치합니다.</small></button>
+ </div>
+ <section id="aiPaidPanel" hidden>
+  <p>지원되는 ChatGPT 계정의 사용량으로 우측 노트와 보완 슬라이드를 만듭니다. 로그인은 기본 브라우저에서 진행합니다.</p>
+  <div class="ai-account"><span id="aiAccountStatus">연결되지 않음</span><div class="ai-inline"><button id="aiSignIn" class="chatgpt-signin">Continue with ChatGPT</button><button id="aiCancelLogin" hidden>연결 취소</button></div></div>
+  <div id="aiAccountControls" class="ai-inline" hidden><label class="sr-only" for="aiAccount">ChatGPT 계정</label><select id="aiAccount"></select><button id="aiAddAccount" class="quiet">계정 추가</button><button id="aiDisconnect" class="quiet">연결 해제</button></div>
+  <div id="aiPlanWelcome" class="ai-notice" hidden>이 앱의 AI 요청은 연결한 ChatGPT 플랜의 사용량을 사용합니다. ChatGPT 설정에서 앱별 한도를 관리할 수 있습니다.<button id="aiAcknowledge" class="text-button">확인</button></div>
+  <label for="aiModel">사용할 모델</label><div class="ai-inline"><select id="aiModel" disabled><option value="">로그인 후 사용할 수 있는 모델을 확인합니다</option></select><button id="aiRefreshModels" class="quiet">새로고침</button></div>
+  <label class="check-label ai-consent"><input id="aiConsent" type="checkbox">슬라이드 이미지와 기존 노트를 OpenAI로 보내고, 내 ChatGPT 사용량으로 보완합니다.</label>
+  <div class="ai-actions"><button id="aiPaidStart" class="primary" disabled>추출하고 자동 보완</button><button id="aiUsage" class="quiet">사용량 관리</button></div>
+  <p id="aiPaidSummary" class="micro"></p><button id="aiSwitchFree" class="text-button">무료 계정 방식으로 이어가기</button>
+ </section>
+ <section id="aiFreePanel" hidden>
+  <p id="aiFreeIntro">앱이 보낼 자료를 준비합니다. ChatGPT에서 답변의 복사 버튼을 누른 뒤 돌아오면 됩니다.</p>
+  <div class="ai-batch-heading"><strong id="aiBatchSummary">원본 슬라이드를 추출한 뒤 준비합니다</strong><label>한 번에 <select id="aiBatchSize" aria-label="한 번에 보완할 슬라이드 수"><option value="4">4장 · 기본</option><option value="2">2장 · 작은 글씨</option><option value="1">1장 · 자세히</option></select></label></div>
+  <ol class="ai-steps">
+   <li><strong>보낼 자료 복사</strong><p id="aiPrepareHint">처음에는 텍스트만 복사합니다. ChatGPT에 먼저 붙여넣고, ‘이미지 복사’를 눌러 같은 메시지에 이미지를 추가한 뒤 전송하세요.</p><button id="aiPrepare" class="primary">추출하고 텍스트 복사</button>
+    <div id="aiPrepared" hidden><img id="aiSheetPreview" alt="ChatGPT에 첨부할 슬라이드 묶음"><p id="aiPreparedName" class="micro"></p><div class="ai-inline"><button id="aiCopyImage" class="quiet">이미지 복사</button><button id="aiCopyPrompt" class="quiet">텍스트 복사</button></div><details><summary>요청문 직접 복사 · 파일로 저장</summary><textarea id="aiPrompt" readonly aria-label="ChatGPT에 보낼 요청문"></textarea><button id="aiSaveImage" type="button">필요할 때만 이미지 파일로 저장</button></details></div>
+   </li>
+   <li><strong>답변 전체를 한 번에 반영</strong><p>ChatGPT 답변의 코드 블록 복사 버튼을 누르세요. 아래 버튼이 클립보드의 답변을 읽어 노트와 보완 슬라이드에 배치합니다.</p><button id="aiPasteApply" class="primary" disabled>답변 붙여넣고 반영</button><details><summary>직접 붙여넣기 또는 결과 파일 선택</summary><textarea id="aiReply" aria-label="ChatGPT 답변 전체" maxlength="600000" placeholder="ChatGPT의 답변 전체를 여기에 붙여넣어도 됩니다."></textarea><button id="aiReplyFileButton">결과 파일 선택</button><input id="aiReplyFile" type="file" accept=".json,.txt,.md" hidden></details></li>
+  </ol>
+  <p id="aiFreeSummary" class="ai-notice" aria-live="polite">반영한 노트는 자동 저장됩니다. 한도에 도달하면 나중에 이어갈 수 있습니다.</p><button id="aiSwitchPaid" class="text-button">ChatGPT 로그인으로 자동 보완하기</button>
+ </section>
+ <p id="aiError" class="ai-error" role="alert" hidden></p>
+ <div class="ai-bottom"><span class="micro">AI 학습 보완 · 교수님 음성은 포함되지 않습니다.</span><button id="aiSkip" class="quiet">보완 없이 슬라이드만 추출</button></div>
+</dialog>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 <noscript>이 프로그램을 사용하려면 브라우저의 JavaScript를 켜 주세요.</noscript>
 </body></html>

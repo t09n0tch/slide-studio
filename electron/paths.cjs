@@ -1,7 +1,7 @@
 const path = require('node:path');
 
 const APP_URL = 'app://studio/index.html';
-const ROOT_FILES = new Set(['index.html', 'style.css', 'editor.css', 'welcome.css', 'icon.svg']);
+const ROOT_FILES = new Set(['index.html', 'style.css', 'editor.css', 'welcome.css', 'ai.css', 'icon.svg']);
 
 function assetPath(root, requestUrl) {
   try {
@@ -21,7 +21,7 @@ function assetPath(root, requestUrl) {
 
 function downloadPath(directory, filename, exists, occupied = new Set()) {
   let safeName = path.basename(filename).replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_');
-  if (!/\.(?:pdf|pptx)$/i.test(safeName)) throw new Error('지원하지 않는 내보내기 형식입니다.');
+  if (!/\.(?:pdf|pptx|png)$/i.test(safeName)) throw new Error('지원하지 않는 내보내기 형식입니다.');
   if (/^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(safeName)) safeName = '_' + safeName;
   const extension = path.extname(safeName), stem = safeName.slice(0, -extension.length);
   for (let i = 0; i < 10000; i++) {

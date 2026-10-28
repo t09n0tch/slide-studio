@@ -1,8 +1,9 @@
-const { app, BrowserWindow, Menu, dialog, net, protocol, screen, session } = require('electron');
+const { app, BrowserWindow, Menu, dialog, net, protocol, screen, session, ipcMain, shell, safeStorage, clipboard, ClipboardItem } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 const { pathToFileURL } = require('node:url');
 const { APP_URL, assetPath, downloadPath } = require('./paths.cjs');
+const { createChatGPT, publicError } = require('./chatgpt.cjs');
 
 app.setName('Slide Studio');
 const userData = process.env.SLIDE_STUDIO_USER_DATA || path.join(app.getPath('appData'), 'SlideStudio');
@@ -14,6 +15,7 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 let window;
+let chatgpt;
 const pendingDownloads = new Set();
 const hasLock = app.requestSingleInstanceLock();
 if (!hasLock) app.quit();
@@ -31,10 +33,10 @@ else {
       minWidth: Math.min(1100, available.width), minHeight: Math.min(740, available.height),
       title: 'Slide Studio', backgroundColor: '#ffffff', show: false,
       icon: path.join(app.getAppPath(), 'build', 'icon.png'), autoHideMenuBar: true,
-      webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true, backgroundThrottling: false }
+      webPreferences: { preload: path.join(__dirname, 'preload.cjs'), nodeIntegration: false, contextIsolation: true, sandbox: true, backgroundThrottling: false }
     });
     window.once('ready-to-show', () => window.show());
-    window.on('closed', () => { window = null; });
+    window.on('closed', () => { chatgpt?.cancel(); window = null; });
     window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
     window.webContents.on('will-navigate', (event, url) => { if (url !== APP_URL) event.preventDefault(); });
     window.webContents.on('will-attach-webview', event => event.preventDefault());
@@ -51,6 +53,38 @@ else {
   }
 
   app.whenReady().then(() => {
+    chatgpt = createChatGPT({storageDir:path.join(userData,'chatgpt'),safeStorage,openBrowser:url=>shell.openExternal(url)});
+    ipcMain.handle('studio:assistant', async (event, method, payload) => {
+      if (!window || event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || event.senderFrame.url !== APP_URL) {
+        return {ok:false,error:{code:'invalid_sender',message:'지원하지 않는 화면입니다.'}};
+      }
+      try {
+        let value;
+        if(method==='session')value=await chatgpt.session();
+        else if(method==='signIn') {
+          if(payload && (typeof payload!=='object' || (payload.profileId!==undefined && (typeof payload.profileId!=='string'||payload.profileId.length>100)) || (payload.newProfile!==undefined && typeof payload.newProfile!=='boolean')))throw new Error();
+          value=await chatgpt.signIn(payload);
+        }
+        else if(method==='selectProfile'){if(typeof payload!=='string'||payload.length>100)throw new Error();value=await chatgpt.selectProfile(payload);}
+        else if(method==='disconnect')value=await chatgpt.disconnect();
+        else if(method==='models')value=await chatgpt.models();
+        else if(method==='generate')value=await chatgpt.generate(payload);
+        else if(method==='cancel')chatgpt.cancel();
+        else if(method==='openChatGPT')await shell.openExternal('https://chatgpt.com/');
+        else if(method==='openUsage')await shell.openExternal('https://chatgpt.com/settings/usage');
+        else if(method==='copyText'){if(typeof payload!=='string'||payload.length>600000)throw new Error();await clipboard.writeText(payload);}
+        else if(method==='copyImage'){
+          if(typeof payload!=='string'||payload.length>32*1024*1024||!/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(payload))throw new Error('복사할 이미지 형식이 올바르지 않습니다.');
+          const png=Buffer.from(payload.slice('data:image/png;base64,'.length),'base64');
+          if(png.length<24||!png.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]))||png.toString('ascii',12,16)!=='IHDR')throw new Error('PNG 이미지를 읽지 못했습니다.');
+          const width=png.readUInt32BE(16),height=png.readUInt32BE(20);if(!width||!height||width>8192||height>8192||width*height>20000000)throw new Error('복사할 이미지가 너무 큽니다. 한 번에 보낼 슬라이드를 줄여 주세요.');
+          await clipboard.write([new ClipboardItem({'image/png':new Blob([png],{type:'image/png'})})]);
+        }
+        else if(method==='readText')value=(await clipboard.readText()).slice(0,600001);
+        else throw new Error();
+        return {ok:true,value};
+      } catch(error) {return {ok:false,error:publicError(error)};}
+    });
     protocol.handle('app', async request => {
       const file = assetPath(app.getAppPath(), request.url);
       if (!file || !['GET', 'HEAD'].includes(request.method)) return new Response('Not found', { status: 404 });

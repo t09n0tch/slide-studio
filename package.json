@@ -1,9 +1,9 @@
 {
   "name": "slide-studio",
   "productName": "Slide Studio",
-  "version": "0.4.0",
+  "version": "0.9.0",
   "private": true,
-  "description": "Offline lecture video slide detection, visual Markdown notes, and native PPTX/PDF export.",
+  "description": "Local lecture slide extraction with optional ChatGPT plan integration and guided learning-note import.",
   "license": "MIT",
   "author": "Jangwon Son",
   "main": "electron/main.cjs",
@@ -14,16 +14,22 @@
   },
   "scripts": {
     "start": "electron .",
-    "test": "node --test tests/core.test.cjs tests/desktop.test.cjs",
+    "test": "node --test tests/core.test.cjs tests/desktop.test.cjs tests/ai.test.cjs tests/chatgpt.test.cjs",
     "test:desktop": "node tests/desktop-smoke.cjs",
+    "test:assistant": "node tests/assistant-smoke.cjs",
+    "test:editing": "node tests/editing-smoke.cjs",
+    "test:usability": "node tests/usability-smoke.cjs",
     "test:packaged": "node tests/desktop-smoke.cjs --packaged",
     "build:editor": "node dev/build-editor.mjs",
+    "build:ai": "node dev/build-ai.mjs",
     "predist": "node dev/sync-version.cjs",
     "pack": "electron-builder --dir --publish never",
     "dist": "electron-builder --publish never",
     "verify:assets": "node dev/verify-assets.cjs",
     "verify:package": "node dev/verify-package.cjs",
-    "checksums": "node dev/checksums.cjs"
+    "checksums": "node dev/checksums.cjs",
+    "test:regions": "node tests/regions-smoke.cjs",
+    "test:clipboard:browser": "node tests/clipboard-browser-smoke.cjs"
   },
   "devDependencies": {
     "@electron/asar": "4.3.1",
@@ -36,6 +42,7 @@
     "electron": "45.1.0",
     "electron-builder": "26.18.0",
     "esbuild": "0.28.2",
+    "jose": "6.1.3",
     "playwright": "1.64.1"
   }
 }

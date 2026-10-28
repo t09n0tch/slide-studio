@@ -31,6 +31,23 @@ test('time parsing and image fit keep source bounds',()=>{
  assert.equal(C.parseTime('01:02:03.5'),3723.5);assert.ok(Number.isNaN(C.parseTime('abc')));assert.equal(C.timecode(3723.5,true),'1:02:03.5');
  assert.deepEqual(C.contain(1920,1080,0,0,1440,1080),{x:0,y:135,w:1440,h:810});
 });
+test('source-only image fitting leaves an unobscured metadata footer',()=>{
+ const slide={width:1920,height:1080},box=C.sourceBox(slide,true);
+ assert.equal(box.y,0);assert.equal(box.h,1024);assert.ok(box.x>0);assert.ok(Math.abs(box.w/box.h-16/9)<1e-12);
+ assert.ok(box.y+box.h<1030);assert.deepEqual(C.sourceBox(slide,false),C.contain(1920,1080,0,0,1440,1080));
+});
+test('crop magnets align controlled edges, preserve moving size, and reject invalid/outside matches',()=>{
+ const targets=[{axis:'x',value:120,label:'content'},{axis:'x',value:0,label:'frame'},{axis:'y',value:30,label:'content'},{axis:'x',value:960,label:'frame'}];
+ const snap=(box,mode,handle,start={x:0,y:0},point={x:100,y:100})=>C.snapCrop(box,mode,handle,start,point,targets,960,540,{x:8,y:8});
+ const corner=snap({x:125,y:35,width:600,height:400},'resize','nw');assert.deepEqual(corner.crop,{x:120,y:30,width:605,height:405});assert.equal(corner.guides.length,2);
+ const untouched=snap({x:125,y:35,width:600,height:400},'resize','se');assert.deepEqual(untouched.crop,{x:125,y:35,width:600,height:400});assert.equal(untouched.guides.length,0);
+ const moved=snap({x:125,y:35,width:600,height:400},'move','');assert.deepEqual(moved.crop,{x:120,y:30,width:600,height:400});
+ assert.equal(snap({x:130,y:80,width:600,height:400},'move','').guides.length,0);
+ const narrow=snap({x:2,y:80,width:123,height:400},'resize','e');assert.equal(narrow.crop.width,118);
+ assert.equal(snap({x:0,y:80,width:125,height:400},'move','').crop.x,0);
+ const reverse=snap({x:125,y:35,width:600,height:400},'create','',{x:725,y:435},{x:125,y:35});assert.deepEqual(reverse.crop,corner.crop);
+ assert.equal(snap({x:118,y:80,width:8,height:400},'resize','w').crop.width,8,'Snapping must not produce crops smaller than eight pixels.');
+});
 test('automatic crop ignores a black opening and retains borders used by any content frame',()=>{
  const w=100,h=60;
  function image(left,right){const rgba=new Uint8ClampedArray(w*h*4);for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=(y*w+x)*4;rgba[i+3]=255;if(x>=left&&x<right)rgba[i]=rgba[i+1]=rgba[i+2]=255;}return rgba;}
@@ -84,4 +101,70 @@ test('styled wrapping keeps every character and carries marks across page-width 
  assert.equal(lines.flat().map(r=>r.text).join(''),runs.map(r=>r.text).join(''));
  assert.ok(lines.every(line=>line.reduce((sum,r)=>sum+measure(r.text,r),0)<=70));
  assert.ok(lines[0][0].bold);assert.ok(lines.flat().some(r=>r.italic));
+});
+test('note wrapping prefers words and keeps closing punctuation with text across styled runs',()=>{
+ const runs=[{text:'개념 설명을 '},{text:'정리합니다',bold:true},{text:'. VeryLongChemicalName(AB) 끝.'}],measure=text=>Array.from(text).length*10;
+ const lines=C.wrapRichText(runs,measure,70),texts=lines.map(line=>line.map(run=>run.text).join(''));
+ assert.equal(texts.join(''),runs.map(r=>r.text).join(''));assert.ok(!texts.some(t=>/^[.,!?;)\]}]+$/.test(t.trim())));
+ assert.ok(lines.every(line=>line.reduce((n,run)=>n+measure(run.text),0)<=70));assert.ok(lines.flat().some(run=>run.bold));
+ assert.deepEqual(C.wrapRichText([{text:'a\n\nb'}],measure,70).map(line=>line.map(run=>run.text).join('')),['a','','b']);
+});
+test('note visibility is per page, persists, and defaults to visible for older saved work',()=>{
+ const hidden={...C.blankSlide(),showNotes:false,notes:'숨겨도 보관할 노트'},legacy=C.blankSlide();delete legacy.showNotes;
+ const saved=C.validateWorkspace(JSON.parse(JSON.stringify(C.workspaceState([hidden,legacy],'강의',null,null))));
+ assert.equal(saved.slides[0].showNotes,false);assert.equal(saved.slides[0].notes,hidden.notes);assert.equal(saved.slides[1].showNotes,true);
+});
+test('a copied page retains its source, notes, visibility and timing without sharing mutable metadata',()=>{
+ const original={...C.blankSlide('solution'),title:'중요한 개념',image:'data:image/png;base64,AA==',width:1920,height:1080,notes:'# 핵심\n\n설명',speakerNotes:'발표자 메모',showNotes:false,startTime:15,time:29,segments:[{start:15,end:30}],pairId:'old-pair'};
+ original.ai={requestId:'request',mode:'manual',sourceId:original.id};const copy=C.duplicateSlide(original);
+ assert.notEqual(copy.id,original.id);assert.equal(copy.title,'중요한 개념 (복사)');assert.equal(copy.pairId,null);
+ for(const field of ['image','notes','speakerNotes','showNotes','startTime','time','included'])assert.equal(copy[field],original[field]);
+ assert.equal(copy.ai.sourceId,copy.id);copy.segments[0].start=21;copy.ai.mode='paid';copy.notes='복사본만 수정';
+ assert.equal(original.segments[0].start,15);assert.equal(original.ai.mode,'manual');assert.equal(original.notes,'# 핵심\n\n설명');
+});
+test('undoing order, deletion, or a display option preserves later edits to unrelated note fields',()=>{
+ const first={...C.blankSlide(),notes:'이전 설명'},second=C.blankSlide(),before=[first,second],reordered=[second,first];
+ const edited=reordered.map(s=>({...s,notes:s.id===first.id?'이후에 적은 노트':s.notes}));
+ const undo=C.restoreSlideHistory(edited,reordered,before);assert.deepEqual(undo.map(s=>s.id),before.map(s=>s.id));assert.equal(undo[0].notes,'이후에 적은 노트');
+ const deleted=[{...second,notes:'삭제 후 다른 페이지에 적은 내용'}];const restored=C.restoreSlideHistory(deleted,[second],before);
+ assert.equal(restored[0].notes,'이전 설명');assert.equal(restored[1].notes,deleted[0].notes);
+ const hidden=[{...first,showNotes:false},second],editedHidden=[{...hidden[0],notes:'새 노트'},second];
+ const shown=C.restoreSlideHistory(editedHidden,hidden,before);assert.equal(shown[0].showNotes,true);assert.equal(shown[0].notes,'새 노트');
+ restored[0].segments.push({start:1,end:2});assert.equal(first.segments.length,0);
+});
+test('discrete detection presets preserve the tuned default and change which small transitions count',()=>{
+ assert.equal(C.DETECTION_PRESETS.balanced.threshold,C.DETECTION_DEFAULTS.threshold);
+ const counts=Object.fromEntries(Object.entries(C.DETECTION_PRESETS).map(([name,preset])=>{
+  const detector=new C.SceneDetector(preset.threshold,2);detector.push(0,frame(255));detector.push(1,frame(245));detector.push(2,frame(245));return[name,detector.finish(3).length];
+ }));
+ assert.deepEqual(counts,{detailed:2,balanced:1,distinct:1});
+});
+test('display timestamps use total minutes and whole seconds without rounding the seek time',()=>{
+ assert.equal(C.timestamp(125.99),'02:05');assert.equal(C.timestamp(3723.5),'62:03');assert.equal(C.timestamp(0),'00:00');assert.equal(C.timestamp(-1),'00:00');
+ const s={...C.blankSlide(),startTime:125.99};assert.equal(C.slideStart(s),125.99);
+});
+test('drag insertion uses the midpoint and covers before, between and after pages',()=>{
+ const rows=[{top:10,bottom:110},{top:120,bottom:220},{top:230,bottom:330}];
+ assert.equal(C.insertionIndex(rows,-20),0);assert.equal(C.insertionIndex(rows,59),0);assert.equal(C.insertionIndex(rows,60),1);assert.equal(C.insertionIndex(rows,115),1);assert.equal(C.insertionIndex(rows,220),2);assert.equal(C.insertionIndex(rows,400),3);
+});
+test('crop dragging supports corners, edges, movement and reverse drawing within image bounds',()=>{
+ const box={x:100,y:50,width:400,height:300},start={x:100,y:50};
+ assert.deepEqual(C.dragCrop(box,'resize','nw',start,{x:150,y:80},960,540),{x:150,y:80,width:350,height:270});
+ assert.deepEqual(C.dragCrop(box,'resize','e',start,{x:900,y:50},960,540),{x:100,y:50,width:860,height:300});
+ assert.deepEqual(C.dragCrop(box,'move','',start,{x:900,y:700},960,540),{x:560,y:240,width:400,height:300});
+ assert.deepEqual(C.dragCrop(box,'create','',{x:600,y:400},{x:200,y:100},960,540),{x:200,y:100,width:400,height:300});
+ const tiny=C.dragCrop(box,'resize','nw',start,{x:900,y:900},960,540);assert.equal(tiny.width,8);assert.equal(tiny.height,8);
+ assert.doesNotThrow(()=>C.dragCrop(box,'resize','e',start,{x:100.5,y:50},501,540));
+});
+test('the final extraction audit orders first appearances, repairs revisit start times and keeps problem pairs together',()=>{
+ const source=(start,end,time,extra={})=>({...C.blankSlide(),time,startTime:start,segments:[{start,end}],...extra});
+ const first=source(0,10,109,{startTime:105,segments:[{start:100,end:110},{start:0,end:10}]}),question=source(20,40,21,{kind:'question',pairId:'pair'}),solution=source(20,40,39,{kind:'solution',pairId:'pair'}),last=source(40,60,59);
+ const result=C.verifyExtraction([last,solution,first,question],120);
+ assert.deepEqual(result.slides.map(s=>s.id),[first.id,question.id,solution.id,last.id]);assert.equal(result.slides[0].startTime,0);assert.equal(result.slides[0].time,109);assert.equal(result.corrected,1);assert.equal(result.reordered,true);assert.equal(first.startTime,105);
+ assert.throws(()=>C.verifyExtraction([source(0,10,30)],120));assert.throws(()=>C.verifyExtraction([first,first],120));
+});
+test('font overrides survive saving and copying, while legacy or invalid settings use automatic fitting',()=>{
+ const manual={...C.blankSlide(),notesFontSize:14.5},old=C.blankSlide();delete old.notesFontSize;
+ const data=C.validateWorkspace(C.workspaceState([manual,old,{...C.blankSlide(),notesFontSize:100}],'강의',null,null));
+ assert.deepEqual(data.slides.map(s=>s.notesFontSize),[14.5,null,null]);assert.equal(C.duplicateSlide(manual).notesFontSize,14.5);
 });

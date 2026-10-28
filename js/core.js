@@ -10,6 +10,11 @@
   // Tuned against one lecture/reference deck. These are pixel rules, with no
   // semantic recognition. Keep both paired frames and every excluded screen.
   const DETECTION_DEFAULTS=Object.freeze({interval:1,threshold:.040,confirmations:2,mergeTolerance:.018,refineResolution:.12,transitionGuard:.15,endingMaxDuration:10,endingHeaderInk:.002,endingBodySpan:.20,exercisePanelFraction:.12,exerciseMinChange:.004,exerciseSettle:1,exerciseStableDifference:.003});
+  const DETECTION_PRESETS=Object.freeze({
+    detailed:{threshold:.025,description:'작은 화면 변화도 별도 페이지로 찾습니다. 같은 슬라이드가 여러 장 생길 수 있습니다.'},
+    balanced:{threshold:DETECTION_DEFAULTS.threshold,description:'일반적인 슬라이드 전환을 찾습니다. 처음에는 이 설정으로 시작하세요.'},
+    distinct:{threshold:.060,description:'화면이 크게 바뀔 때만 나눕니다. 비슷한 슬라이드나 짧게 나온 화면을 놓칠 수 있습니다.'}
+  });
   const uid = () => typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `s-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   function timecode(seconds, precise = false) {
     const n = Math.max(0, Number(seconds) || 0);
@@ -22,6 +27,47 @@
     if (!parts.length || parts.length > 3 || parts.some(p => !/^\d+(\.\d+)?$/.test(p))) return NaN;
     return parts.reduce((n, v) => n * 60 + Number(v), 0);
   }
+  function timestamp(seconds){const n=Math.max(0,Math.floor(Number(seconds)||0));return `${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;}
+  function insertionIndex(rects,y){const index=rects.findIndex(r=>y<(r.top+r.bottom)/2);return index<0?rects.length:index;}
+  function dragCrop(initial,mode,handle,start,point,width,height){
+    const clamp=(n,min,max)=>Math.min(max,Math.max(min,n)),dx=point.x-start.x,dy=point.y-start.y;
+    let left=initial.x,top=initial.y,right=left+initial.width,bottom=top+initial.height;
+    if(mode==='move'){left=clamp(left+dx,0,width-initial.width);top=clamp(top+dy,0,height-initial.height);return cropBounds({...initial,x:left,y:top},width,height);}
+    if(mode==='create'){
+      left=clamp(Math.min(start.x,point.x),0,width-8);top=clamp(Math.min(start.y,point.y),0,height-8);
+      right=clamp(Math.max(start.x,point.x),left+8,width);bottom=clamp(Math.max(start.y,point.y),top+8,height);
+    }else{
+      if(handle.includes('w'))left=clamp(left+dx,0,right-8);if(handle.includes('e'))right=clamp(right+dx,left+8,width);
+      if(handle.includes('n'))top=clamp(top+dy,0,bottom-8);if(handle.includes('s'))bottom=clamp(bottom+dy,top+8,height);
+    }
+    left=Math.round(left);top=Math.round(top);right=Math.round(right);bottom=Math.round(bottom);
+    return cropBounds({x:left,y:top,width:right-left,height:bottom-top},width,height);
+  }
+  // Tolerances use source pixels; the UI converts an eight-pixel screen gap.
+  // Moving preserves size and resizing preserves the opposite edge.
+  function snapCrop(box,mode,handle,start,point,targets,width,height,tolerance){
+    let left=box.x,right=left+box.width,top=box.y,bottom=top+box.height;const guides=[];
+    const edges=mode==='create'?(point.x<start.x?'w':'e')+(point.y<start.y?'n':'s'):handle;
+    for(const axis of ['x','y']){
+      const horizontal=axis==='x',low=horizontal?left:top,high=horizontal?right:bottom,limit=horizontal?width:height;
+      const controlled=mode==='move'?[['low',low],['high',high]]:[];
+      if(mode!=='move'){if(edges.includes(horizontal?'w':'n'))controlled.push(['low',low]);if(edges.includes(horizontal?'e':'s'))controlled.push(['high',high]);}
+      const matches=[];
+      for(const [edge,value]of controlled)for(const target of targets.filter(t=>t.axis===axis)){
+        const delta=target.value-value;if(Math.abs(delta)>tolerance[axis])continue;
+        const nextLow=mode==='move'||edge==='low'?low+delta:low,nextHigh=mode==='move'||edge==='high'?high+delta:high;
+        if(nextLow<0||nextHigh>limit||nextHigh-nextLow<8)continue;
+        matches.push({edge,delta,target});
+      }
+      matches.sort((a,b)=>Math.abs(a.delta)-Math.abs(b.delta));const match=matches[0];if(!match)continue;
+      if(horizontal){if(mode==='move'||match.edge==='low')left+=match.delta;if(mode==='move'||match.edge==='high')right+=match.delta;}
+      else{if(mode==='move'||match.edge==='low')top+=match.delta;if(mode==='move'||match.edge==='high')bottom+=match.delta;}
+      guides.push(match.target);
+    }
+    return{crop:cropBounds({x:left,y:top,width:right-left,height:bottom-top},width,height),guides};
+  }
+  // Leave a slim footer below source-only pages so metadata never covers ink.
+  function sourceBox(slide,sourceOnly=false){return contain(slide.width,slide.height,0,0,sourceOnly?1920:1440,sourceOnly?1024:1080);}
   function cropBounds(crop, width, height) {
     const x = Math.round(Number(crop.x)), y = Math.round(Number(crop.y));
     const w = Math.round(Number(crop.width)), h = Math.round(Number(crop.height));
@@ -133,13 +179,47 @@
     return groups;
   }
   function blankSlide(kind='original') {
-    return {id:uid(),kind,title:'',notes:'',notesFormat:'markdown',speakerNotes:'',included:true,image:null,width:0,height:0,time:null,startTime:null,segments:[],pairId:null,autoExcludedReason:null};
+    return {id:uid(),kind,title:'',notes:'',notesFormat:'markdown',notesFontSize:null,speakerNotes:'',included:true,showNotes:true,image:null,width:0,height:0,time:null,startTime:null,segments:[],pairId:null,autoExcludedReason:null,ai:null};
+  }
+  function duplicateSlide(slide) {
+    const id=uid();
+    return {...slide,id,title:(slide.title||KINDS[slide.kind]||'슬라이드').slice(0,95)+' (복사)',segments:slide.segments.map(s=>({...s})),pairId:null,ai:slide.ai?{...slide.ai,sourceId:slide.ai.sourceId===slide.id?id:slide.ai.sourceId}:null};
+  }
+  function restoreSlideHistory(current,from,to) {
+    const currentById=new Map(current.map(s=>[s.id,s])),fromById=new Map(from.map(s=>[s.id,s]));
+    return to.map(target=>{
+      const existing=currentById.get(target.id),source=fromById.get(target.id);
+      const result={...(existing&&source?existing:target)};
+      // Undo the recorded operation without discarding later edits to other fields.
+      if(existing&&source)for(const key of new Set([...Object.keys(source),...Object.keys(target)])){
+        if(source[key]===target[key]||JSON.stringify(source[key])===JSON.stringify(target[key]))continue;
+        if(Object.hasOwn(target,key))result[key]=target[key];else delete result[key];
+      }
+      result.segments=result.segments.map(s=>({...s}));result.ai=result.ai?{...result.ai}:null;
+      return result;
+    });
   }
   function splitExerciseFrames(solution,image,time,width,height) {
     const pairId=solution.pairId||uid();
     // Never copy solution annotations into a question page.
     const question={...blankSlide('question'),pairId,title:'문제',image,time,startTime:slideStart(solution),width,height,segments:solution.segments.map(s=>({...s}))};
     return {question,solution:{...solution,kind:'solution',pairId}};
+  }
+  function verifyExtraction(slides,duration,interval=1){
+    const ids=new Set();let corrected=0;
+    const checked=slides.map((slide,index)=>{
+      if(ids.has(slide.id))throw new Error('추출한 페이지 ID가 중복되어 목록을 추가하지 않았습니다.');ids.add(slide.id);
+      const segments=(slide.segments||[]).map(s=>({...s})).sort((a,b)=>a.start-b.start);
+      if(!segments.length||segments.some(s=>!Number.isFinite(s.start)||!Number.isFinite(s.end)||s.start<0||s.end<s.start||s.end>duration+.1))throw new Error('영상 구간을 확인하지 못한 페이지가 있어 추출 결과를 추가하지 않았습니다.');
+      if(!Number.isFinite(slide.time)||!segments.some(s=>slide.time>=s.start-.1&&slide.time<=s.end+.1))throw new Error('캡처 시각과 원본 영상 구간이 맞지 않습니다. 구간을 나누어 다시 추출해 주세요.');
+      const first=segments[0],start=slide.startTime,valid=Number.isFinite(start)&&start>=Math.max(0,first.start-interval-.1)&&start<=Math.min(first.end,first.start+.1);
+      if(!valid)corrected++;
+      return {slide:{...slide,segments,startTime:valid?start:first.start},first:first.start,index};
+    });
+    const pairOrder=s=>s.kind==='question'?0:s.kind==='solution'?1:2;
+    checked.sort((a,b)=>a.first-b.first||a.slide.startTime-b.slide.startTime||(a.slide.pairId&&a.slide.pairId===b.slide.pairId?pairOrder(a.slide)-pairOrder(b.slide):0)||a.index-b.index);
+    for(let i=1;i<checked.length;i++)if(checked[i].slide.startTime<checked[i-1].slide.startTime){checked[i].slide.startTime=checked[i].first;corrected++;}
+    return {slides:checked.map(s=>s.slide),corrected,reordered:checked.some((s,i)=>s.index!==i)};
   }
   function validateWorkspace(data) {
     if(!data || data.format!=='lecture-slide-studio' || ![1,VERSION].includes(data.version) || !Array.isArray(data.slides)) throw new Error('브라우저에 저장된 노트를 읽을 수 없습니다.');
@@ -154,7 +234,8 @@
       if(s.time!==null&&(!Number.isFinite(s.time)||s.time<0))throw new Error('화면 시각이 올바르지 않습니다.');
       if(s.startTime!==undefined&&s.startTime!==null&&(!Number.isFinite(s.startTime)||s.startTime<0))throw new Error('슬라이드 시작 시각이 올바르지 않습니다.');
       if(!Array.isArray(s.segments)||s.segments.some(v=>!v||!Number.isFinite(v.start)||!Number.isFinite(v.end)||v.start<0||v.end<v.start))throw new Error('영상 구간이 올바르지 않습니다.');
-      return {...blankSlide(),id:s.id,kind:s.kind,title:s.title,notes:s.notes,notesFormat:s.notesFormat==='markdown'?'markdown':'plain',speakerNotes:s.speakerNotes,image:s.image,width:s.width,height:s.height,time:s.time,startTime:s.startTime??null,segments:s.segments.map(v=>({start:v.start,end:v.end})),included:s.included!==false,pairId:typeof s.pairId==='string'?s.pairId:null,autoExcludedReason:typeof s.autoExcludedReason==='string'?s.autoExcludedReason.slice(0,200):null};
+      const ai=s.ai&&typeof s.ai.requestId==='string'&&s.ai.requestId.length<=100&&['paid','manual'].includes(s.ai.mode)&&typeof s.ai.sourceId==='string'?{requestId:s.ai.requestId,mode:s.ai.mode,sourceId:s.ai.sourceId}:null;
+      return {...blankSlide(),id:s.id,kind:s.kind,title:s.title,notes:s.notes,notesFormat:s.notesFormat==='markdown'?'markdown':'plain',notesFontSize:Number.isFinite(s.notesFontSize)&&s.notesFontSize>=8&&s.notesFontSize<=36?s.notesFontSize:null,speakerNotes:s.speakerNotes,image:s.image,width:s.width,height:s.height,time:s.time,startTime:s.startTime??null,segments:s.segments.map(v=>({start:v.start,end:v.end})),included:s.included!==false,showNotes:s.showNotes!==false,pairId:typeof s.pairId==='string'?s.pairId:null,autoExcludedReason:typeof s.autoExcludedReason==='string'?s.autoExcludedReason.slice(0,200):null,ai};
     });
     const video=data.video && typeof data.video.name==='string' && Number.isFinite(data.video.duration) && Number.isFinite(data.video.width) && Number.isFinite(data.video.height) ? {...data.video}:null;
     const crop=video?cropBounds(data.crop,video.width,video.height):null;
@@ -203,15 +284,22 @@
   function noteTitle(doc){return documentBlocks(doc).map(b=>(b.runs||[]).map(r=>r.text).join('')).find(t=>t.trim())?.trim().slice(0,100)||'';}
   function wrapRichText(runs,measure,maxWidth){
     const lines=[];let line=[],width=0;
-    const flush=()=>{lines.push(line);line=[];width=0;};
+    const flush=()=>{const row=[];for(const atom of line){const last=row.at(-1);if(last&&last._key===atom.key)last.text+=atom.ch;else row.push({...atom.style,text:atom.ch,_key:atom.key});}lines.push(row);line=[];width=0;};
     for(const source of runs){
-      const {text,...style}=source;
+      const {text,...style}=source,key=JSON.stringify(style);
       for(const ch of Array.from(String(text).normalize('NFC'))){
         if(ch==='\n'){flush();continue;}
         const w=measure(ch,style);
-        if(line.length&&width+w>maxWidth)flush();
-        const last=line.at(-1),key=JSON.stringify(style);
-        if(last&&last._key===key)last.text+=ch;else line.push({...style,text:ch,_key:key});width+=w;
+        if(line.length&&width+w>maxWidth){
+          // Prefer a word boundary, retaining every character and its marks.
+          // Long words still split; punctuation never gets a line to itself.
+          const boundary=line.findLastIndex(atom=>/\s/.test(atom.ch));
+          let carry=[];
+          if(boundary>0){const tail=line.slice(boundary+1),tailWidth=tail.reduce((n,a)=>n+a.width,0);if(tailWidth+w<=maxWidth){carry=tail;line=line.slice(0,boundary+1);}}
+          if(!carry.length&&line.length>1&&(/[.,!?;:%…，。、！？)\]}〉》」』】”’]/.test(ch)||/[(\[{〈《「『【“‘]/.test(line.at(-1).ch))&&line.at(-1).width+w<=maxWidth)carry=[line.pop()];
+          flush();line=carry;width=carry.reduce((n,a)=>n+a.width,0);
+        }
+        line.push({ch,width:w,style,key});width+=w;
       }
     }
     if(line.length||!lines.length)flush();
@@ -230,5 +318,5 @@
     return lines;
   }
   function contain(w,h,x,y,maxW,maxH){const scale=Math.min(maxW/w,maxH/h);return{x:x+(maxW-w*scale)/2,y:y+(maxH-h*scale)/2,w:w*scale,h:h*scale};}
-  return {VERSION,KINDS,DETECTION_DEFAULTS,uid,timecode,parseTime,cropBounds,descriptor,difference,detectBlackMargins,layoutStats,isSparseEnding,SceneDetector,groupSegments,blankSlide,splitExerciseFrames,validateWorkspace,workspaceState,slideStart,documentBlocks,noteTitle,wrapRichText,wrapText,contain};
+  return {VERSION,KINDS,DETECTION_DEFAULTS,DETECTION_PRESETS,uid,timecode,timestamp,parseTime,cropBounds,dragCrop,snapCrop,sourceBox,insertionIndex,descriptor,difference,detectBlackMargins,layoutStats,isSparseEnding,SceneDetector,groupSegments,blankSlide,duplicateSlide,restoreSlideHistory,splitExerciseFrames,verifyExtraction,validateWorkspace,workspaceState,slideStart,documentBlocks,noteTitle,wrapRichText,wrapText,contain};
 });

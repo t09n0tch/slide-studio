@@ -51,8 +51,10 @@ jobs:
           fi
       - run: npm ci
       - run: npm run build:editor
+      - run: npm run build:ai
       - run: npm run verify:assets
       - run: npm test
+      - run: npm run test:assistant
       - name: Build installer
         run: npm run dist -- --${{ matrix.target }} --${{ matrix.arch }}
         env:
@@ -60,6 +62,14 @@ jobs:
       - run: npm run verify:package
       - name: Test the actual packaged app
         run: npm run test:packaged
+      - name: Test page editing and export layout
+        run: npm run test:editing -- --packaged
+      - name: Test drag, crop, note fitting and extraction order
+        run: npm run test:usability -- --packaged
+      - name: Test bulk crop, magnetic edges and compact video
+        run: npm run test:regions -- --packaged
+      - name: Test packaged AI workflows without account usage
+        run: npm run test:assistant -- --packaged
       - name: Upload installers
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
