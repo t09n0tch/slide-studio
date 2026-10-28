@@ -40,10 +40,25 @@ async function savedWorkspace(page){await page.waitForFunction(()=>document.getE
   await choose(copy);await page.locator('#moveDown').click();const moved=[original[0],original[1],copy,original[2]];assert.deepEqual(await ids(),moved);
   await page.locator('.slide-item.active').focus();await page.keyboard.press('ControlOrMeta+z');assert.deepEqual(await ids(),withCopy);
   await page.keyboard.press('ControlOrMeta+Shift+z');assert.deepEqual(await ids(),moved);
-  await page.locator(`.slide-item[data-id="${copy}"]`).dragTo(page.locator(`.slide-item[data-id="${original[0]}"]`),{sourcePosition:{x:45,y:18},targetPosition:{x:45,y:18}});
+  // Exercise native drag + edge scrolling in a compact window. The source and
+  // target need not fit together; read the target position after scrolling.
+  await application.evaluate(({BrowserWindow})=>{const window=BrowserWindow.getAllWindows()[0];window.setMinimumSize(0,0);window.setContentSize(1024,654);});
+  const dragSource=page.locator(`.slide-item[data-id="${copy}"]`);
+  await dragSource.scrollIntoViewIfNeeded();const sourceRect=await dragSource.boundingBox(),listRect=await page.locator('#slideList').boundingBox();
+  await page.mouse.move(sourceRect.x+45,sourceRect.y+18);await page.mouse.down();await page.mouse.move(sourceRect.x+60,sourceRect.y+32,{steps:8});
+  await page.locator(`.slide-item.dragging[data-id="${copy}"]`).waitFor();
+  await page.mouse.move(listRect.x+70,listRect.y+8,{steps:12});
+  await page.waitForFunction(()=>document.getElementById('slideList').scrollTop===0);
+  const targetRect=await page.locator(`.slide-item[data-id="${original[0]}"]`).boundingBox();
+  await page.mouse.move(targetRect.x+50,targetRect.y+18,{steps:8});
+  await page.waitForFunction(()=>!document.getElementById('dropIndicator').hidden&&document.getElementById('dragStatus').textContent==='1번째 위치에 놓기');
+  await page.mouse.up();
   const dragged=[copy,...original];assert.deepEqual(await ids(),dragged);
   await page.locator('#undo').click();assert.deepEqual(await ids(),moved);await page.locator('#redo').click();assert.deepEqual(await ids(),dragged);
-  await choose(original[1]);await page.locator('#richMode').click();const editor=page.locator('#noteEditor .tiptap');
+  await choose(original[1]);
+  // Make room for editing below the sticky toolbar on this compact viewport.
+  if(await page.locator('#videoControls').isVisible())await page.locator('#toggleVideo').click();
+  await page.locator('#richMode').click();const editor=page.locator('#noteEditor .tiptap');
   await editor.click();await page.keyboard.press('ControlOrMeta+End');await page.keyboard.type(' editor-undo-check');assert.ok((await editor.innerText()).includes('editor-undo-check'));
   await page.keyboard.press('ControlOrMeta+z');assert.deepEqual(await ids(),dragged);assert.ok(!(await editor.innerText()).includes('editor-undo-check'),'Page undo intercepted note editing.');
   // The selection presets must reach the actual extraction algorithm.
