@@ -1,19 +1,31 @@
 # Slide Studio
 
-강의 영상을 열면 원본 슬라이드와 필기 화면을 자동으로 찾고, 하나의 문서 편집기에서 쓴 노트를 PPTX·PDF로 내보내는 로컬 브라우저 앱입니다.
+강의 영상을 열면 원본 슬라이드와 필기 화면을 자동으로 찾고, 하나의 문서 편집기에서 쓴 노트를 PPTX·PDF로 내보내는 **Windows·macOS용 로컬 앱**입니다.
 
-**AI 모델·API 키·영상 업로드·서버 없이 사용합니다.** 실행에 필요한 편집기, 내보내기 라이브러리, PDF용 한글 글꼴을 포함합니다. 사용자에게 Node.js, Python, FFmpeg, Codex 설치가 필요하지 않습니다.
+**AI 모델·API 키·영상 업로드·서버 없이 사용합니다.** 실행 환경, 편집기, 내보내기 라이브러리, PDF용 한글 글꼴을 포함합니다. 사용자에게 Chrome, Node.js, Python, FFmpeg, Codex 설치가 필요하지 않습니다.
 
-## 바로 실행
+## 다운로드와 설치
 
-1. ZIP의 **폴더 전체를 압축 해제**합니다.
-2. `index.html`을 데스크톱 **Google Chrome**에서 엽니다.
+| 컴퓨터 | 다운로드 | 설치 |
+| --- | --- | --- |
+| Windows PC · x64 | [Windows 설치 파일](https://github.com/t09n0tch/slide-studio/releases/latest/download/SlideStudio-Windows-x64-Setup.exe) | Setup.exe를 실행합니다. |
+| Mac · Apple Silicon / M 시리즈 | [Apple Silicon용 DMG](https://github.com/t09n0tch/slide-studio/releases/latest/download/SlideStudio-macOS-arm64.dmg) | DMG를 열고 앱을 Applications로 드래그합니다. |
+| Mac · Intel | [Intel용 DMG](https://github.com/t09n0tch/slide-studio/releases/latest/download/SlideStudio-macOS-x64.dmg) | DMG를 열고 앱을 Applications로 드래그합니다. |
+
+[모든 릴리스와 SHA-256 확인](https://github.com/t09n0tch/slide-studio/releases/latest) · [설치·배포 상태 안내](RELEASE_NOTES.md)
+
+현재 배포본은 정식 개발자 인증서 서명과 Apple 공증을 받지 않았습니다. 첫 실행 확인이나 차단이 표시될 수 있습니다. Mac은 [Apple의 확인 방법](https://support.apple.com/ko-kr/102445)을 참고하세요. 소스 코드 ZIP은 설치 파일이 아닙니다.
+
+## 사용하기
+
+1. 설치한 **Slide Studio**를 실행합니다.
+2. 첫 화면에는 큰 **slide studio** 제목과 파일을 넣는 영역이 나옵니다.
 3. 첫 화면 중앙의 **영상 파일을 여기에 놓으세요** 영역에 영상을 끌어다 놓습니다. 같은 영역을 클릭하면 파일 선택 창에서도 고를 수 있습니다. 선택한 영상이 편집 화면에 연결되고 자동 추출이 시작됩니다.
 4. 진행 창의 **0–100%**와 옆에 작게 표시되는 **예상 남은 시간**을 확인하며 기다립니다. 처음에는 ‘남은 시간 계산 중’으로 표시하고, 약 2초 후부터 경과 시간과 진행률로 추정한 시간을 갱신합니다. 처리 단계와 컴퓨터 속도에 따라 예상 시간이 달라질 수 있습니다. 완료 후 왼쪽 슬라이드를 선택합니다. 하단 원본 영상도 바로 재생할 수 있습니다.
 5. 오른쪽 **나의 강의노트**에 자유롭게 씁니다. 제목과 본문을 별도 칸에 나눠 입력하지 않습니다. 툴바로 서식을 고르면 마크다운 문법을 몰라도 쓸 수 있습니다.
-6. **PPTX ↓ / PDF ↓**로 완성본을 내보냅니다. 파일은 브라우저의 다운로드 위치에 저장됩니다.
+6. **PPTX ↓ / PDF ↓**로 완성본을 내보냅니다. 파일은 컴퓨터의 **다운로드 폴더**에 저장됩니다. 같은 이름이 있으면 번호를 붙여 기존 파일을 보관합니다.
 
-이미 열어 둔 탭은 진행 중인 추출을 취소한 뒤 새로고침합니다. **slide studio** 제목과 파일 영역만 있는 첫 화면이 나오면 같은 영상을 다시 선택합니다. 편집 화면 하단에 **v0.3.3**이 보이는지 확인합니다. `index.html`, CSS, `js/`, `vendor/` 폴더의 위치 관계를 유지해야 합니다.
+편집 화면 하단의 버전은 **v0.4.0**입니다. 앱 창을 뒤로 보내도 추출이 이어집니다.
 
 ## 하나의 노트 편집기
 
@@ -51,15 +63,22 @@ AI·OCR·음성 인식 없이 픽셀 차이를 비교합니다. 검은 여백을
 
 전체 검출 수치는 `detector-profile.json`에 기록하며, 실행 기본값은 `js/core.js`의 `DETECTION_DEFAULTS`에 있습니다. JSON은 기록용이며 실행 시 가져오는 설정 파일은 아닙니다. 앱 배포 파일에 강의 영상·캡처·기준 PDF·영상별 시각 목록을 포함하지 않습니다.
 
-## 브라우저 자동 저장
+## 자동 저장
 
-현재 슬라이드와 노트는 가능한 환경에서 **브라우저의 IndexedDB에 자동 저장**합니다. 첫 화면에서 같은 영상 파일을 다시 선택하면 노트를 이어서 불러오고 영상을 연결합니다. 별도의 작업 파일 열기·저장 메뉴는 없습니다.
+현재 슬라이드와 노트는 **앱의 IndexedDB에 자동 저장**합니다. 첫 화면에서 같은 영상 파일을 다시 선택하면 노트를 이어서 불러오고 영상을 연결합니다. 별도의 작업 파일 열기·저장 메뉴는 없습니다. 설치 경로와 별개인 고정된 데이터 폴더를 사용합니다.
 
-브라우저 데이터 삭제, 시크릿 모드, 앱 폴더 이동, 저장 공간 제한은 자동 저장에 영향을 줄 수 있습니다. 보관·공유할 완성본은 PPTX·PDF로 내보내 주세요. 자동 저장이 실패하면 편집기 위에 상태를 표시합니다. ‘새 강의’를 시작하면 현재 자동 저장 작업을 초기화합니다.
+- Windows: `%APPDATA%\SlideStudio`
+- Mac: `~/Library/Application Support/SlideStudio`
+
+기존 Chrome 버전의 자동 저장 노트는 설치 앱으로 자동 이전되지 않습니다. 보관·공유할 완성본은 PPTX·PDF로 내보내 주세요. 자동 저장이 실패하면 편집기 위에 상태를 표시합니다. ‘새 강의’를 시작하면 현재 자동 저장 작업을 초기화합니다.
+
+## Chrome에서 실행하기
+
+개발용 소스 폴더의 `index.html`을 데스크톱 Chrome에서 열어 기존 브라우저 방식으로 사용할 수도 있습니다. `index.html`, CSS, `js/`, `vendor/`의 위치 관계를 유지해야 합니다. 이 경우에는 Chrome의 다운로드 폴더와 브라우저 자동 저장을 사용합니다. 브라우저 데이터 삭제·시크릿 모드·폴더 이동은 저장 복원에 영향을 줄 수 있습니다.
 
 ## 호환성과 검증
 
-macOS Chrome에서 로컬 파일 실행, MP4(H.264), 오프라인 내보내기, 마크다운과 서식 편집 간 전환, 자동 저장 후 영상 재연결을 확인했습니다. 모바일이나 다른 브라우저는 영상 코덱·저장 정책이 다를 수 있습니다. DRM 영상·스트리밍 URL은 처리하지 않습니다.
+릴리스 빌드는 Windows x64, Mac Apple Silicon, Mac Intel의 실제 앱 패키지를 실행해 검사합니다. 한글 경로의 MP4(H.264), 숨겨진 창에서의 추출, 완성 필기 보관, 한글 마크다운 편집, 실제 PDF·PPTX 저장, 파일 덮어쓰기 방지, 재실행 후 노트 복원을 확인합니다. 합성 테스트 영상만 사용하며 강의 영상과 사용자 노트를 배포 파일에 넣지 않습니다. DRM 영상·스트리밍 URL은 처리하지 않습니다.
 
 PPTX는 받는 컴퓨터의 설치 글꼴에 따라 표시 글꼴이 대체될 수 있습니다. PDF는 포함 글꼴을 임베딩합니다. 지원하지 않는 문자는 조용히 누락하는 대신 수정 안내를 표시합니다.
 
@@ -69,14 +88,27 @@ PPTX는 받는 컴퓨터의 설치 글꼴에 따라 표시 글꼴이 대체될 �
 
 소스는 `js/app.js`(화면·영상·자동 저장), `js/core.js`(검출·문서 구조), `js/export.js`(공통 서식 배치·PPTX·PDF), `dev/editor-entry.js`(편집기)로 나눕니다. 실행에 필요한 번들은 `vendor/`에 이미 포함되어 있습니다.
 
-개발자만 아래 명령을 사용합니다.
+개발자만 Node.js 24 이상에서 아래 명령을 사용합니다.
 
 ```bash
 npm ci
 npm run build:editor
 npm test
+npm start
+npm run test:desktop
+npm run dist
+npm run verify:package
+npm run test:packaged
 ```
 
 편집기는 [Tiptap](https://tiptap.dev/docs/editor/markdown/getting-started/basic-usage) 3.32.0, 내보내기는 PptxGenJS 4.0.1·pdf-lib 1.17.1·fontkit 1.1.1을 사용합니다. 편집기 빌드는 번들·라이선스 고지·배포 파일 해시를 함께 갱신합니다.
+
+Electron 45.1.0과 electron-builder 26.18.0으로 설치 앱을 만듭니다. `electron/main.cjs`는 고정된 로컬 주소, 앱 데이터 경로, 격리된 렌더러, 백그라운드 처리와 다운로드를 담당합니다. renderer에서 Node.js를 사용할 수 없으며 HTTP·HTTPS 연결을 차단합니다.
+
+## GitHub 자동 배포
+
+`.github/workflows/desktop-release.yml`이 Windows와 Mac 두 종류에서 빌드·단위 검사·실제 패키지 실행 검사를 수행합니다. GitHub에 `v0.4.0`처럼 `package.json` 버전과 일치하는 태그를 푸시하면, 세 플랫폼이 모두 통과한 뒤 세 설치 파일과 `SHA256SUMS.txt`를 한 릴리스에 게시합니다. 업로드가 끝나기 전에는 초안 상태로 두며, 이미 공개된 릴리스의 파일은 교체하지 않습니다.
+
+다음 버전은 변경 내용을 커밋한 뒤 `npm version patch` 등으로 버전을 올리고 `git push origin main --follow-tags`로 배포합니다. 빌드가 화면의 버전 표시를 자동으로 맞춥니다. 배포할 변경 내용은 `RELEASE_NOTES.md`에 기록합니다.
 
 직접 작성한 앱 코드는 [MIT](LICENSE)이며, 포함 라이브러리와 글꼴에는 `vendor/`의 각 라이선스가 적용됩니다. 강의 자료와 영상의 권리는 원저작자에게 있습니다.

@@ -1,20 +1,41 @@
 {
-  "name": "lecture-slide-studio",
-  "version": "0.3.3",
+  "name": "slide-studio",
+  "productName": "Slide Studio",
+  "version": "0.4.0",
   "private": true,
   "description": "Offline lecture video slide detection, visual Markdown notes, and native PPTX/PDF export.",
   "license": "MIT",
+  "author": "Jangwon Son",
+  "main": "electron/main.cjs",
+  "homepage": "https://github.com/t09n0tch/slide-studio",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/t09n0tch/slide-studio.git"
+  },
   "scripts": {
-    "test": "node --test tests/core.test.cjs",
-    "build:editor": "node dev/build-editor.mjs"
+    "start": "electron .",
+    "test": "node --test tests/core.test.cjs tests/desktop.test.cjs",
+    "test:desktop": "node tests/desktop-smoke.cjs",
+    "test:packaged": "node tests/desktop-smoke.cjs --packaged",
+    "build:editor": "node dev/build-editor.mjs",
+    "predist": "node dev/sync-version.cjs",
+    "pack": "electron-builder --dir --publish never",
+    "dist": "electron-builder --publish never",
+    "verify:assets": "node dev/verify-assets.cjs",
+    "verify:package": "node dev/verify-package.cjs",
+    "checksums": "node dev/checksums.cjs"
   },
   "devDependencies": {
+    "@electron/asar": "4.3.1",
     "@tiptap/core": "3.32.0",
     "@tiptap/extension-placeholder": "3.32.0",
     "@tiptap/extension-task-item": "3.32.0",
     "@tiptap/extension-task-list": "3.32.0",
     "@tiptap/markdown": "3.32.0",
     "@tiptap/starter-kit": "3.32.0",
-    "esbuild": "0.28.2"
+    "electron": "45.1.0",
+    "electron-builder": "26.18.0",
+    "esbuild": "0.28.2",
+    "playwright": "1.64.1"
   }
 }

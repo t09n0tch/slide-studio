@@ -1,0 +1,118 @@
+name: Desktop builds and release
+
+on:
+  push:
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2022
+            label: Windows x64
+            target: win
+            arch: x64
+            artifact: Windows-x64
+          - os: macos-15
+            label: macOS Apple Silicon
+            target: mac
+            arch: arm64
+            artifact: macOS-arm64
+          - os: macos-15-intel
+            label: macOS Intel
+            target: mac
+            arch: x64
+            artifact: macOS-x64
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Check release tag
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            node -e 'const p=require("./package.json");if(process.env.GITHUB_REF_NAME!==`v${p.version}`)throw Error("Tag and package version differ")'
+          fi
+      - run: npm ci
+      - run: npm run build:editor
+      - run: npm run verify:assets
+      - run: npm test
+      - name: Build installer
+        run: npm run dist -- --${{ matrix.target }} --${{ matrix.arch }}
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - run: npm run verify:package
+      - name: Test the actual packaged app
+        run: npm run test:packaged
+      - name: Upload installers
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: installer-${{ matrix.artifact }}
+          path: |
+            dist/*.exe
+            dist/*.dmg
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+      - name: Upload test screenshots
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: smoke-${{ matrix.artifact }}
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  publish:
+    name: Publish all three downloads
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: installer-*
+          merge-multiple: true
+          path: release-files
+      - name: Check that every platform is present
+        run: |
+          test -s release-files/SlideStudio-Windows-x64-Setup.exe
+          test -s release-files/SlideStudio-macOS-arm64.dmg
+          test -s release-files/SlideStudio-macOS-x64.dmg
+          node dev/checksums.cjs release-files
+      - name: Publish a complete release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          tag="$GITHUB_REF_NAME"
+          if gh release view "$tag" --json isDraft > release-state.json 2>/dev/null; then
+            node -e 'if(!require("./release-state.json").isDraft)throw Error("Published releases are immutable; use a new version")'
+          else
+            gh release create "$tag" --draft --verify-tag --title "Slide Studio $tag" --notes-file RELEASE_NOTES.md
+          fi
+          gh release upload "$tag" release-files/* --clobber
+          gh release edit "$tag" --draft=false --latest

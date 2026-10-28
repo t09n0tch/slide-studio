@@ -370,6 +370,6 @@
  $('sensitivity').addEventListener('input',e=>$('sensitivityText').textContent=Number(e.target.value)<32?'작은 변화도 구분':Number(e.target.value)>48?'큰 전환만 구분':'이 강의에 맞춘 기본값');
  $('cancelWork').addEventListener('click',()=>controller?.abort());$('progressDialog').addEventListener('cancel',e=>{e.preventDefault();controller?.abort();});
  $('progressDialog').addEventListener('close',()=>{if(!$('progressDialog').open){clearInterval(progressTimer);progressTimer=null;}});
- window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
+ window.addEventListener('beforeunload',e=>{if(dirty||busy){e.preventDefault();e.returnValue='';}});
  render();const recoveryReady=recovery();
 })();

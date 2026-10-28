@@ -3,3 +3,12 @@ node_modules/
 *.lecture.json
 *.pptx
 *.pdf
+*.mp4
+!tests/fixtures/*.mp4
+dist/
+test-results/
+*.log
+.env
+.env.*
+*.p12
+*.pfx
