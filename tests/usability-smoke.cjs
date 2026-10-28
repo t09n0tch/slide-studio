@@ -16,6 +16,7 @@ async function fileBytes(file){for(let i=0;i<1200;i++){try{const bytes=await fs.
   await fs.mkdir(downloads);await fs.mkdir(path.join(root,'test-results'),{recursive:true});
   application=await electron.launch({...packaged?{executablePath:executable,args:['--disable-gpu']}:{args:[root,'--disable-gpu']},env,cwd:root,timeout:60000});page=await application.firstWindow();
   const errors=[];page.on('pageerror',err=>errors.push(err.message));
+  await application.evaluate(({BrowserWindow})=>{const window=BrowserWindow.getAllWindows()[0];window.setMinimumSize(0,0);window.setContentSize(1024,654);});
   await page.locator('#videoFile').setInputFiles(path.join(__dirname,'fixtures','slides.mp4'));await page.locator('#aiSkip').click();
   await page.waitForFunction(()=>!document.getElementById('progressDialog').open&&document.querySelectorAll('.slide-item').length===3);
   const ids=()=>page.locator('.slide-item').evaluateAll(rows=>rows.map(row=>row.dataset.id));
@@ -29,12 +30,22 @@ async function fileBytes(file){for(let i=0;i<1200;i++){try{const bytes=await fs.
   const scroll=await page.locator('#slideList').evaluate(el=>{el.scrollTop=el.scrollHeight;window.stableRow=el.firstElementChild;return el.scrollTop;});assert.ok(scroll>300);
   assert.equal(await page.locator('#slideList').evaluate(el=>el.scrollWidth<=el.clientWidth),true,'Thumbnails create a horizontal scrollbar.');
   for(const id of [initial[2],initial[1],initial[2]]){
-   await choose(id);assert.ok(Math.abs(await page.locator('#slideList').evaluate(el=>el.scrollTop)-scroll)<1,'Selecting a lower page moved the library scroll position.');
+   // Click the visible portion without locator.click scrolling a clipped row
+   // into view first. That automation scroll is unrelated to app selection.
+   const row=await page.locator(`.slide-item[data-id="${id}"]`).boundingBox(),list=await page.locator('#slideList').boundingBox();
+   const top=Math.max(row.y,list.y),bottom=Math.min(row.y+row.height,list.y+list.height);assert.ok(bottom-top>12,'The selected row must have a clickable visible portion.');
+   await page.mouse.click(row.x+70,(top+bottom)/2);
+   assert.equal(await page.locator('.slide-item.active').getAttribute('data-id'),id);
+   assert.ok(Math.abs(await page.locator('#slideList').evaluate(el=>el.scrollTop)-scroll)<1,'Selecting a lower page moved the library scroll position.');
    assert.equal(await page.evaluate(()=>window.stableRow.isConnected),true,'Selecting a page rebuilt the thumbnail list.');
    const time=await page.locator(`.slide-item[data-id="${id}"] .item-meta span`).last().innerText();
    assert.match(time,/^\d{2,}:\d{2}$/);assert.equal(await page.locator('#previewTime').innerText(),time);
    await page.waitForFunction(expected=>!document.getElementById('video').seeking&&Math.abs(document.getElementById('video').currentTime-expected)<.11,id===initial[2]?4:2);
   }
+  // Keep both destination rows visible for insertion/no-op checks. Native edge
+  // autoscroll in a compact viewport is covered by editing-smoke.cjs.
+  await application.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setContentSize(1100,800));
+  await page.locator('#slideList').evaluate(el=>el.scrollTop=el.scrollHeight);
   await choose(initial[1]);assert.equal(await page.locator('.slide-item.active').getAttribute('data-id'),initial[1]);
   const beforeDrag=await ids(),source=await page.locator(`.slide-item[data-id="${initial[2]}"]`).boundingBox(),target=await page.locator(`.slide-item[data-id="${initial[1]}"]`).boundingBox();
   await page.mouse.move(source.x+45,source.y+18);await page.mouse.down();await page.mouse.move(source.x+60,source.y+32,{steps:8});
