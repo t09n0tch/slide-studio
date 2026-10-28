@@ -42,17 +42,20 @@ async function fileBytes(file){for(let i=0;i<1200;i++){try{const bytes=await fs.
    assert.match(time,/^\d{2,}:\d{2}$/);assert.equal(await page.locator('#previewTime').innerText(),time);
    await page.waitForFunction(expected=>!document.getElementById('video').seeking&&Math.abs(document.getElementById('video').currentTime-expected)<.11,id===initial[2]?4:2);
   }
-  // Keep both destination rows visible for insertion/no-op checks. Native edge
-  // autoscroll in a compact viewport is covered by editing-smoke.cjs.
-  await application.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setContentSize(1100,800));
-  await page.locator('#slideList').evaluate(el=>el.scrollTop=el.scrollHeight);
+  // Put the insertion target clear of the autoscroll edge. Native macOS may
+  // constrain requested window heights to its display, so use actual geometry.
+  // Edge autoscroll itself is covered by editing-smoke.cjs.
   await choose(initial[1]);assert.equal(await page.locator('.slide-item.active').getAttribute('data-id'),initial[1]);
+  await page.locator('#slideList').evaluate((list,id)=>{const row=list.querySelector(`[data-id="${id}"]`);list.scrollTop+=row.getBoundingClientRect().top-list.getBoundingClientRect().top-44;},initial[1]);
   const beforeDrag=await ids(),source=await page.locator(`.slide-item[data-id="${initial[2]}"]`).boundingBox(),target=await page.locator(`.slide-item[data-id="${initial[1]}"]`).boundingBox();
-  await page.mouse.move(source.x+45,source.y+18);await page.mouse.down();await page.mouse.move(source.x+60,source.y+32,{steps:8});
+  await page.mouse.move(source.x+45,source.y+10);await page.mouse.down();await page.mouse.move(source.x+60,source.y+10,{steps:8});
+  await page.locator(`.slide-item.dragging[data-id="${initial[2]}"]`).waitFor();
   await page.mouse.move(target.x+50,target.y+target.height*.75,{steps:12});assert.equal(await page.locator('#dropIndicator').isVisible(),false,'A no-op drop should not show a valid insertion bar.');
   await page.mouse.move(target.x+50,target.y+18,{steps:8});await page.locator('#dropIndicator').waitFor({state:'visible'});
   const indicator=await page.locator('#dropIndicator').boundingBox();assert.ok(Math.abs(indicator.y-target.y)<16);
-  await page.screenshot({path:path.join(root,'test-results','drop-insertion.png')});await page.mouse.up();
+  await page.screenshot({path:path.join(root,'test-results','drop-insertion.png')});
+  assert.equal(await page.locator('#dragStatus').innerText(),'11번째 위치에 놓기');
+  await page.mouse.move(target.x+51,target.y+18);await page.mouse.up();
   const reordered=[...beforeDrag.slice(0,-2),initial[2],initial[1]];assert.deepEqual(await ids(),reordered);assert.equal(await page.locator('.slide-item.active').getAttribute('data-id'),initial[2]);await page.locator('#undo').click();assert.deepEqual(await ids(),beforeDrag);assert.equal(await page.locator('.slide-item.active').getAttribute('data-id'),initial[1]);await page.locator('#redo').click();assert.equal(await page.locator('.slide-item.active').getAttribute('data-id'),initial[2]);await page.locator('#undo').click();
   const cancelSource=await page.locator(`.slide-item[data-id="${initial[2]}"]`).boundingBox(),canvas=await page.locator('#slidePreview').boundingBox();
   await page.mouse.move(cancelSource.x+45,cancelSource.y+18);await page.mouse.down();await page.mouse.move(cancelSource.x+65,cancelSource.y+35,{steps:6});await page.mouse.move(canvas.x+canvas.width/2,canvas.y+30,{steps:12});
@@ -73,7 +76,9 @@ async function fileBytes(file){for(let i=0;i<1200;i++){try{const bytes=await fs.
   await page.locator('#undo').click();await page.locator('#redo').click();assert.deepEqual((await saved(page)).crop,cropped.crop);
   console.log('PASS group 2: red crop outline and handles, pointer resize/move/new selection, apply, undo and persistence.');
 
-  await choose(initial[1]);await page.locator('#markdownMode').click();
+  await choose(initial[1]);
+  if(await page.locator('#videoControls').isVisible())await page.locator('#toggleVideo').click();
+  await page.locator('#markdownMode').click();
   const note='## 자동 맞춤 확인\n\n'+Array.from({length:10},(_,i)=>`${i+1}. 핵심 개념과 교수님 필기를 함께 복습합니다. 반응 조건과 예시를 확인하면서 이유를 설명합니다. 기본 원리를 다시 정리합니다.`).join('\n\n')+'\n\nEND_OF_NOTE';
   await page.locator('#markdownSource').fill(note);await page.waitForFunction(()=>document.getElementById('previewBody').classList.contains('planned')&&Number(document.getElementById('slidePreview').dataset.noteFont)<22.5&&Number(document.getElementById('slidePreview').dataset.notePages)===1);
   const autoSize=Number(await page.locator('#noteFontSize').inputValue());assert.equal(await page.locator('#autoNoteFont').isChecked(),true);assert.ok((await page.locator('#previewBody').textContent()).includes('END_OF_NOTE'));
@@ -108,6 +113,7 @@ async function fileBytes(file){for(let i=0;i<1200;i++){try{const bytes=await fs.
   for(const size of [{width:1100,height:740},{width:1512,height:950}]){await application.evaluate(({BrowserWindow},size)=>BrowserWindow.getAllWindows()[0].setContentSize(size.width,size.height),size);await page.waitForFunction(()=>Math.abs(document.querySelector('.note-chrome').getBoundingClientRect().top-document.querySelector('.inspector-body').getBoundingClientRect().top)<1);assert.equal(await page.locator('#noteToolbar').evaluate(el=>el.scrollWidth<=el.clientWidth+1),true,'Toolbar overflows a narrow app window.');}
   console.log('PASS compact font controls inside toolbar, shared UI typography and real glyph widths, opaque sticky toolbar at two window sizes, foldable additional settings and preserved values.');
 
+  if(!(await page.locator('#videoControls').isVisible()))await page.locator('#toggleVideo').click();
   await page.locator('#cropButton').click();await page.locator('#fullCrop').click();await page.locator('#applyCrop').click();await page.locator('#progressDialog').waitFor({state:'hidden'});
   await page.evaluate(()=>{const group=window.StudioCore.groupSegments;window.StudioCore.groupSegments=(...args)=>group(...args).reverse();window.sawOrderAudit=false;new MutationObserver(()=>{if(document.getElementById('progressTitle').textContent.includes('순서와 시작 시각'))window.sawOrderAudit=true;}).observe(document.getElementById('progressTitle'),{childList:true});});
   await page.locator('#extractSettings').click();await page.locator('#mergeRepeated').check();await page.locator('#splitExercises').uncheck();await page.locator('#excludeEnding').uncheck();await page.locator('#startExtract').click();
