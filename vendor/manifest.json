@@ -1,0 +1,292 @@
+{
+  "libraries": {
+    "PptxGenJS": "4.0.1",
+    "pdf-lib": "1.17.1",
+    "@pdf-lib/fontkit": "1.1.1",
+    "JSZip": "3.10.1",
+    "Tiptap": "3.32.0"
+  },
+  "fonts": [
+    {
+      "family": "Noto Sans KR",
+      "source": "https://github.com/google/fonts/tree/main/ofl/notosanskr",
+      "transform": "Static wght=400 and wght=700 TrueType instances made with fontTools4.68.0",
+      "license": "FONT-LICENSE.txt",
+      "weights": [
+        400,
+        700
+      ]
+    },
+    {
+      "family": "Noto Sans",
+      "source": "https://github.com/notofonts/noto-fonts/blob/main/hinted/ttf/NotoSans/NotoSans-Regular.ttf",
+      "license": "NOTOSANS-LICENSE.txt",
+      "weights": [
+        400,
+        700
+      ]
+    }
+  ],
+  "files": {
+    "EDITOR-NOTICES.txt": {
+      "sha256": "beeb99c6ea3a062e5a38cd0df0187818fff9ad0a521fee321475ef83345881ef",
+      "bytes": 47015
+    },
+    "FONT-LICENSE.txt": {
+      "sha256": "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9",
+      "bytes": 4388
+    },
+    "FONTKIT-NOTICE.txt": {
+      "sha256": "92381e7b05975a37c15da72acef67162b40780579480aa6bdbcbb1079f76db08",
+      "bytes": 346
+    },
+    "FONTKIT-README.md": {
+      "sha256": "7315fcc54511f5ffc906969c39333f93cd47f5217ab014fe45acff14bd5ec4c0",
+      "bytes": 16875
+    },
+    "JSZIP-LICENSE.txt": {
+      "sha256": "566c953c6090b1218ca6217dd7359d45dde46581968586dc607d59a78af6a9c4",
+      "bytes": 33753
+    },
+    "NOTOSANS-LICENSE.txt": {
+      "sha256": "0dab92d0544f7b233403f14b84a663bdbfa746982eda629e7f4f9ffe1b036feb",
+      "bytes": 4377
+    },
+    "PAKO-LICENSE.txt": {
+      "sha256": "a04665b3b2de56c66730c1f720f528175739e4104f79073614aa611da1e85539",
+      "bytes": 1104
+    },
+    "PDF-LIB-LICENSE.txt": {
+      "sha256": "f2c9fc00fdb66eb99ac156ba52d734af66d8d309f65753ae809ad34ee2883bcb",
+      "bytes": 1070
+    },
+    "PPTXGENJS-LICENSE.txt": {
+      "sha256": "7a2bfe96150786ed1908b8e63f98ebab88875c1e79e28faff6649e0f11f77e52",
+      "bytes": 1081
+    },
+    "font-bold-data.js": {
+      "sha256": "0e088d0d0883faaf4adebc923da23e68c25ad20e39d5efac98c3d31887c9c61a",
+      "bytes": 9064715
+    },
+    "font-data.js": {
+      "sha256": "3e3254b4a40b4608bc71205f0eb34b2490602bc37ee16a240ca9b13cabaa5513",
+      "bytes": 8299890
+    },
+    "font-latin-data.js": {
+      "sha256": "447a428f476ef684c658844ba91b642eae5adf940a317dfddfc58d0a3e03a7e1",
+      "bytes": 759043
+    },
+    "fontkit.umd.js": {
+      "sha256": "d60739f02b41b636ee0cc2fb79ba589958144f9240e585dbc19e6a3b08d82825",
+      "bytes": 1506282
+    },
+    "jszip.min.js": {
+      "sha256": "7f839b2d4688b845c105ebf5d2f9803075f91ea0fe72bdaac176c3a04dd3d2c1",
+      "bytes": 97781
+    },
+    "notes-editor.js": {
+      "sha256": "8e19f041cc46c1e582696b304b3018a9e65cfb2a6c02af017ff0e4bb1c2cc508",
+      "bytes": 456577
+    },
+    "pdf-lib.min.js": {
+      "sha256": "0f9a5cad07941f0826586c94e089d89b918c46e5c17cf2d5a3c6f666e3bc694f",
+      "bytes": 525099
+    },
+    "pptxgen.bundle.js": {
+      "sha256": "4fb9eac5cfefb213e2d8743c2b7151025f31bfb3f834c73c12062916daa0f3f8",
+      "bytes": 460889
+    }
+  },
+  "editorDependencies": [
+    {
+      "name": "@tiptap/core",
+      "version": "3.32.0",
+      "license": "MIT"
+    },
+    {
+      "name": "@tiptap/extension-blockquote",
+      "version": "3.32.0",
+      "license": "MIT"
+    },
+    {
+      "name": "@tiptap/extension-bold",
+      "version": "3.32.0",
+      "license": "MIT"
+    },
+    {
+      "name": "@tiptap/extension-code",
+      "version": "3.32.0",
+      "license": "MIT"
+    },
+    {
+      "name": "@tiptap/extension-code-block",
+      "version": "3.32.0",
+      "license": "MIT"
+    },
+    {
+      "name": "@tiptap/extension-document",
+      "version": "3.32.0",
+      "license": "MIT"
+    },
+    {
+      "name": "@tiptap/extension-hard-break",
+      "version": "3.32.0",
+      "license": "MIT"
+    },
+    {
+      "name": "@tiptap/extension-heading",
+      "version": "3.32.0",
+      "license": "MIT"
+    },
+    {
+      "name": "@tiptap/extension-horizontal-rule",
+      "version": "3.32.0",
+      "license": "MIT"
+    },
+    {
+      "name": "@tiptap/extension-italic",
+      "version": "3.32.0",
+      "license": "MIT"
+    },
+    {
+      "name": "@tiptap/extension-link",
+      "version": "3.32.0",
+      "license": "MIT"
+    },
+    {
+      "name": "@tiptap/extension-list",
+      "version": "3.32.0",
+      "license": "MIT"
+    },
+    {
+      "name": "@tiptap/extension-paragraph",
+      "version": "3.32.0",
+      "license": "MIT"
+    },
+    {
+      "name": "@tiptap/extension-placeholder",
+      "version": "3.32.0",
+      "license": "MIT"
+    },
+    {
+      "name": "@tiptap/extension-strike",
+      "version": "3.32.0",
+      "license": "MIT"
+    },
+    {
+      "name": "@tiptap/extension-task-item",
+      "version": "3.32.0",
+      "license": "MIT"
+    },
+    {
+      "name": "@tiptap/extension-task-list",
+      "version": "3.32.0",
+      "license": "MIT"
+    },
+    {
+      "name": "@tiptap/extension-text",
+      "version": "3.32.0",
+      "license": "MIT"
+    },
+    {
+      "name": "@tiptap/extension-underline",
+      "version": "3.32.0",
+      "license": "MIT"
+    },
+    {
+      "name": "@tiptap/extensions",
+      "version": "3.32.0",
+      "license": "MIT"
+    },
+    {
+      "name": "@tiptap/markdown",
+      "version": "3.32.0",
+      "license": "MIT"
+    },
+    {
+      "name": "@tiptap/pm",
+      "version": "3.32.0",
+      "license": "MIT"
+    },
+    {
+      "name": "@tiptap/starter-kit",
+      "version": "3.32.0",
+      "license": "MIT"
+    },
+    {
+      "name": "linkifyjs",
+      "version": "4.4.0",
+      "license": "MIT"
+    },
+    {
+      "name": "marked",
+      "version": "17.0.6",
+      "license": "MIT"
+    },
+    {
+      "name": "orderedmap",
+      "version": "2.1.1",
+      "license": "MIT"
+    },
+    {
+      "name": "prosemirror-commands",
+      "version": "1.7.2",
+      "license": "MIT"
+    },
+    {
+      "name": "prosemirror-dropcursor",
+      "version": "1.8.4",
+      "license": "MIT"
+    },
+    {
+      "name": "prosemirror-gapcursor",
+      "version": "1.4.1",
+      "license": "MIT"
+    },
+    {
+      "name": "prosemirror-history",
+      "version": "1.5.1",
+      "license": "MIT"
+    },
+    {
+      "name": "prosemirror-keymap",
+      "version": "1.2.3",
+      "license": "MIT"
+    },
+    {
+      "name": "prosemirror-model",
+      "version": "1.25.12",
+      "license": "MIT"
+    },
+    {
+      "name": "prosemirror-schema-list",
+      "version": "1.5.1",
+      "license": "MIT"
+    },
+    {
+      "name": "prosemirror-state",
+      "version": "1.4.4",
+      "license": "MIT"
+    },
+    {
+      "name": "prosemirror-transform",
+      "version": "1.12.4",
+      "license": "MIT"
+    },
+    {
+      "name": "prosemirror-view",
+      "version": "1.42.8",
+      "license": "MIT"
+    },
+    {
+      "name": "rope-sequence",
+      "version": "1.3.4",
+      "license": "MIT"
+    },
+    {
+      "name": "w3c-keyname",
+      "version": "2.2.8",
+      "license": "MIT"
+    }
+  ]
+}

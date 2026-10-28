@@ -1,0 +1,20 @@
+{
+  "name": "lecture-slide-studio",
+  "version": "0.3.3",
+  "private": true,
+  "description": "Offline lecture video slide detection, visual Markdown notes, and native PPTX/PDF export.",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test tests/core.test.cjs",
+    "build:editor": "node dev/build-editor.mjs"
+  },
+  "devDependencies": {
+    "@tiptap/core": "3.32.0",
+    "@tiptap/extension-placeholder": "3.32.0",
+    "@tiptap/extension-task-item": "3.32.0",
+    "@tiptap/extension-task-list": "3.32.0",
+    "@tiptap/markdown": "3.32.0",
+    "@tiptap/starter-kit": "3.32.0",
+    "esbuild": "0.28.2"
+  }
+}

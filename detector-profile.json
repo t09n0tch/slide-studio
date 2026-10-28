@@ -1,0 +1,25 @@
+{
+  "format": "lecture-slide-studio-detector-profile",
+  "version": "0.3.0",
+  "date": "2026-10-28",
+  "preprocessing": "native-crop-halving-cascade-to-96x72",
+  "interval": 1,
+  "threshold": 0.04,
+  "confirmations": 2,
+  "mergeTolerance": 0.018,
+  "refineResolution": 0.12,
+  "transitionGuard": 0.15,
+  "endingMaxDuration": 10,
+  "endingHeaderInk": 0.002,
+  "endingBodySpan": 0.2,
+  "exercisePanelFraction": 0.12,
+  "exerciseMinChange": 0.004,
+  "exerciseSettle": 1,
+  "exerciseStableDifference": 0.003,
+  "notes": [
+    "Calibrated on one lecture/reference deck; no independent lecture validation.",
+    "Exercise splitting uses pale blue panel geometry, without reading text.",
+    "Excluded ending candidates remain available in the editor."
+  ],
+  "timestamp": "first-stable-slide-appearance; capture time is stored separately"
+}

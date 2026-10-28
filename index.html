@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'none'; img-src 'self' data: blob:; media-src blob:; font-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Slide Studio · 나만의 강의자료</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="editor.css"><link rel="stylesheet" href="welcome.css">
+<script defer src="vendor/jszip.min.js"></script><script defer src="vendor/pptxgen.bundle.js"></script><script defer src="vendor/pdf-lib.min.js"></script><script defer src="vendor/fontkit.umd.js"></script><script defer src="vendor/font-data.js"></script><script defer src="vendor/font-latin-data.js"></script>
+<script defer src="vendor/font-bold-data.js"></script><script defer src="vendor/notes-editor.js"></script>
+<script defer src="js/core.js"></script><script defer src="js/export.js"></script><script defer src="js/app.js"></script>
+</head>
+<body class="welcome-screen">
+<header class="app-header">
+ <a class="brand" href="index.html" aria-label="Slide Studio 홈"><img src="icon.svg" width="36" height="36" alt=""><span>Slide Studio<small>나만의 강의자료</small></span></a>
+ <div class="header-middle"><span class="local-dot"></span> 영상은 내 컴퓨터에만</div>
+ <nav class="header-actions" aria-label="파일 작업">
+  
+  <button id="exportPptx" disabled>PPTX ↓</button><button id="exportPdf" class="primary" disabled>PDF ↓</button>
+ </nav>
+</header>
+<main id="welcome" class="welcome">
+ <h1>slide studio</h1>
+ <button id="welcomeOpen" class="video-drop-zone" type="button" aria-label="강의 영상 파일 선택">
+  <span class="drop-label">영상 파일을 여기에 놓으세요</span>
+  <span class="drop-hint">또는 클릭하여 파일 선택</span>
+ </button>
+</main>
+<section id="workspace" class="workspace" hidden>
+ <div class="lecture-strip"><div><input id="lectureTitle" aria-label="강의자료 제목" maxlength="100" placeholder="강의자료 제목"><span id="videoMeta" class="muted"></span></div><div class="strip-actions"><button id="extract" class="primary" disabled>자동 추출</button><button id="extractSettings" class="quiet" disabled>추출 설정</button><button id="newLecture" class="quiet">새 강의</button></div></div>
+ <div class="editor-grid">
+  <aside class="library"><div class="panel-heading"><h2>슬라이드 <span id="slideCount">0</span></h2><button id="addSupplement" class="icon-button" title="보충 설명 페이지 추가" aria-label="보충 설명 페이지 추가">＋</button></div><p class="library-caption">체크한 페이지만 내보냅니다</p><div id="slideList" class="slide-list"></div><div class="library-bottom"><button id="undo" class="quiet" disabled>↶ 되돌리기</button></div></aside>
+  <div class="canvas-column"><div class="canvas-toolbar"><div><span id="pagePosition" class="muted">페이지를 추가해 주세요</span><span id="pageKind" class="kind-label"></span></div><div class="page-tools"><button id="moveUp" class="icon-button" title="앞으로 이동" aria-label="앞으로 이동" disabled>↑</button><button id="moveDown" class="icon-button" title="뒤로 이동" aria-label="뒤로 이동" disabled>↓</button><button id="deleteSlide" class="quiet danger" disabled>삭제</button></div></div>
+   <div class="preview-wrap"><div id="slidePreview" class="slide-preview"><div id="previewSource" class="preview-source"><img id="previewImage" alt="선택한 원본 슬라이드"><span id="previewEmpty">영상에서 화면을 추가해 주세요</span></div><div id="previewNotes" class="preview-notes"><div id="previewLabel">강의 노트</div><div id="previewBody" class="preview-content"></div><footer><button id="previewTime" type="button" class="timestamp-button" title="이 슬라이드가 시작한 시각으로 이동"></button><span id="previewPage"></span></footer></div></div></div>
+   <div class="preview-caption" id="previewCaption">직접 작성한 노트는 PPTX에서 편집할 수 있습니다.</div>
+   <section class="video-panel"><div class="video-heading"><h2>원본 영상 · 필요할 때 화면 보완</h2><button id="toggleVideo" class="quiet">접기</button></div><div id="videoControls"><div class="video-stage"><video id="video" controls preload="auto" playsinline></video><div id="videoPlaceholder">영상을 열면 자동 추출을 시작합니다. 추출 후 원하는 시각의 화면으로 교체할 수도 있습니다.</div></div><div class="seek-row"><button class="quiet" id="backSecond" title="1초 전">−1초</button><input id="seekInput" type="text" value="00:00" aria-label="이동할 영상 시각"><button id="seekButton">이동</button><button class="quiet" id="forwardSecond" title="1초 후">+1초</button><span class="seek-spacer"></span><button id="captureNew" disabled>현재 화면 추가</button><button id="replaceFrame" disabled>선택 화면 교체</button></div><p class="micro" id="cropDescription">슬라이드 영역을 설정하면 검은 여백을 제외할 수 있습니다.</p><button id="cropButton" class="text-button" disabled>슬라이드 영역 설정</button></div></section>
+  </div>
+  <aside class="inspector"><div class="panel-heading"><h2>나의 강의노트</h2><span id="saveStatus" class="save-status">준비됨</span></div>
+   <div id="noSelection" class="no-selection">슬라이드를 선택하면<br>여기에 자유롭게 노트를 적을 수 있습니다.</div>
+   <section id="notePanel" hidden>
+    <div class="note-modes" role="group" aria-label="노트 편집 모드"><button id="richMode" type="button" class="active" aria-pressed="true">서식 편집</button><button id="markdownMode" type="button" aria-pressed="false">마크다운</button></div>
+    <div id="noteToolbar" class="note-toolbar" role="toolbar" aria-label="노트 서식 도구">
+     <label class="sr-only" for="noteFormat">문단 스타일</label><select id="noteFormat" aria-label="문단 스타일"><option value="paragraph">본문</option><option value="1">제목 1</option><option value="2">제목 2</option><option value="3">제목 3</option></select>
+     <button type="button" class="editor-tool" data-command="bold" title="굵게 · ⌘/Ctrl+B" aria-label="굵게" aria-pressed="false"><b>B</b></button>
+     <button type="button" class="editor-tool" data-command="italic" title="기울임 · ⌘/Ctrl+I" aria-label="기울임" aria-pressed="false"><i>I</i></button>
+     <button type="button" class="editor-tool" data-command="strike" title="취소선" aria-label="취소선" aria-pressed="false"><s>S</s></button>
+     <button type="button" class="editor-tool" data-command="code" title="인라인 코드" aria-label="인라인 코드" aria-pressed="false">&lt;/&gt;</button>
+     <button type="button" class="editor-tool" data-command="bulletList" title="글머리 목록" aria-label="글머리 목록" aria-pressed="false">• 목록</button>
+     <button type="button" class="editor-tool" data-command="orderedList" title="번호 목록" aria-label="번호 목록" aria-pressed="false">1. 목록</button>
+     <button type="button" class="editor-tool" data-command="taskList" title="체크리스트" aria-label="체크리스트" aria-pressed="false">☑ 체크</button>
+     <button type="button" class="editor-tool" data-command="blockquote" title="인용문" aria-label="인용문" aria-pressed="false">❝ 인용</button>
+     <button type="button" class="editor-tool" data-command="horizontalRule" title="구분선" aria-label="구분선">―</button>
+     <button type="button" class="editor-tool" data-command="undo" title="노트 실행 취소" aria-label="노트 실행 취소">↶</button><button type="button" class="editor-tool" data-command="redo" title="노트 다시 실행" aria-label="노트 다시 실행">↷</button>
+    </div>
+    <div id="noteEditor" class="note-editor"></div><textarea id="markdownSource" class="markdown-source" aria-label="마크다운 노트 원문" maxlength="100000" placeholder="# 제목&#10;&#10;여기에 노트를 적어 보세요." hidden></textarea>
+    <div class="note-help"><span>일반 문서처럼 쓰거나 마크다운으로 입력하세요.</span><button id="importNotes" type="button" class="text-button">노트 불러오기</button></div>
+    <p class="micro">긴 노트는 PPTX·PDF에서 다음 페이지로 이어집니다.</p>
+    <details class="note-options"><summary>추가 설정</summary><label for="kind">페이지 종류</label><select id="kind"><option value="original">원본 + 강의노트</option><option value="question">문제</option><option value="solution">풀이와 해설</option><option value="supplement">보충 설명</option></select><label for="speakerNotes">발표자 노트 · PPTX에만 포함</label><textarea id="speakerNotes" rows="4" placeholder="발표자만 볼 자세한 메모"></textarea></details>
+   </section>
+  </aside>
+ </div>
+</section>
+<footer class="status-bar"><span id="status">영상과 노트는 외부 서버로 전송되지 않습니다.</span><span>v0.3.3 · 로컬 실행</span></footer>
+<input id="videoFile" type="file" accept="video/*,.mp4,.m4v,.webm,.mov" hidden><input id="notesFile" type="file" accept=".md,.markdown,.txt,text/plain,text/markdown" hidden>
+<dialog id="cropDialog" class="settings-dialog"><div class="dialog-title"><h2>슬라이드 영역</h2><button id="closeCrop" class="icon-button" aria-label="닫기">×</button></div><p>슬라이드와 교수님 필기가 모두 들어오도록 조정해 주세요.</p><canvas id="cropPreview"></canvas><div class="crop-inputs"><label>X<input id="cropX" type="number" min="0"></label><label>Y<input id="cropY" type="number" min="0"></label><label>너비<input id="cropW" type="number" min="8"></label><label>높이<input id="cropH" type="number" min="8"></label></div><div class="dialog-actions"><button id="fullCrop">전체 화면</button><button id="autoCrop">검은 여백 찾기</button><button id="applyCrop" class="primary">영역 적용</button></div><p class="micro">영역 변경은 이후 추출·캡처부터 적용됩니다. 저장된 화면은 그대로 유지됩니다.</p></dialog>
+<dialog id="extractDialog" class="settings-dialog compact"><div class="dialog-title"><h2>자동 추출 설정</h2><button id="closeExtract" class="icon-button" aria-label="닫기">×</button></div><p>선택한 슬라이드 영역에서 화면 전환을 찾아 목록을 자동으로 구성합니다. 짧게 등장하는 화면이 빠졌다면 간격과 감도를 조정해 보세요.</p><div class="two-fields"><label>시작 시각<input id="rangeStart" value="00:00"></label><label>끝 시각<input id="rangeEnd" value="00:00"></label></div><label>화면 확인 간격<select id="sampleInterval"><option value="0.5">0.5초 · 매우 자세히</option><option value="1" selected>1초 · 기본</option><option value="2">2초</option><option value="3">3초</option><option value="5">5초 · 빠르게</option></select></label><label>감도 <span id="sensitivityText">이 강의에 맞춘 기본값</span><input type="range" id="sensitivity" min="3" max="100" value="40"></label><p class="micro">값이 낮을수록 작은 변화도 다른 화면으로 찾습니다.</p><label class="check-label"><input id="mergeRepeated" type="checkbox" checked> 비슷한 반복 화면 묶기</label><label class="check-label"><input id="refineFrames" type="checkbox" checked> 전환 직전의 필기 화면 더 자세히 찾기</label><label class="check-label"><input id="splitExercises" type="checkbox" checked> 문제·풀이 화면 자동 분리</label><p class="micro">이 강의의 연한 파란 문제 상자 형식에서 처음·완성 화면을 나눕니다. 정답이 숨겨져 있는지 확인해 주세요.</p><label class="check-label"><input id="excludeEnding" type="checkbox" checked> 짧고 내용이 적은 마지막 화면 자동 제외</label><p id="extractNotice" class="micro">자동으로 목록을 구성합니다. 필요한 경우 추출 후 화면을 수정할 수 있습니다.</p><button id="startExtract" class="primary full-width">자동 추출 시작</button></dialog>
+<dialog id="progressDialog" class="progress-dialog"><div class="progress-icon">◌</div><h2 id="progressTitle">화면을 확인하고 있습니다</h2><p id="progressDetail"></p><div class="progress-summary"><span id="progressPercent" class="progress-percent" aria-live="polite">0%</span><span id="progressEta" class="progress-eta">남은 시간 계산 중</span></div><progress id="progressBar" max="100" value="0" aria-label="슬라이드 준비 진행률"></progress><button id="cancelWork">취소</button></dialog>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+<noscript>이 프로그램을 사용하려면 브라우저의 JavaScript를 켜 주세요.</noscript>
+</body></html>
