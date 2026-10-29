@@ -4,7 +4,7 @@
  let slides=[],selectedId=null,title='새 강의자료',videoInfo=null,crop=null,videoUrl=null,busy=false,dirty=false;
  let history=[],future=[],pendingHistory=null,saveTimer=null,toastTimer=null,controller=null,dragId=null,editRevision=0,recoverable=null;
  let notesEditor=null,editorSlideId=null,rawMode=false,progressValue=0,progressStarted=0,progressTimer=null;
- let assistant=null;
+ let assistant=null,speechUI=null,transcript=null,originalFile=null;
  let dragSlot=null,dragY=null,dragScrollTimer=null,selectionSeek=null,lastVideoSelection=null,cropGesture=null,previewRevision=0,previewTimer=null;
  let cropTargets=[],cropGuides=[];
  const thumbnailCache=new Map(),thumbnailTimers=new Map();
@@ -13,7 +13,7 @@
  const analysisContext=analysisCanvas.getContext('2d',{willReadFrequently:true}),frameContext=frameCanvas.getContext('2d');
  let analysisStages=[],analysisCropKey='';
  const selected=()=>slides.find(s=>s.id===selectedId)||null;
- const snapshot=()=>({...C.workspaceState(slides,title,videoInfo,crop),assistant:assistant?.snapshot()});
+ const snapshot=()=>({...C.workspaceState(slides,title,videoInfo,crop),assistant:assistant?.snapshot(),transcript});
  function toast(message,error=false){clearTimeout(toastTimer);$('toast').textContent=message;$('toast').classList.toggle('error',error);$('toast').hidden=false;toastTimer=setTimeout(()=>$('toast').hidden=true,error?8000:4500);}
  function fail(err){console.error(err);toast(err.message||String(err),true);status(err.message||String(err));}
  function status(message){$('status').textContent=message;}
@@ -24,7 +24,7 @@
  }
  function showWorkspace(){$('welcome').hidden=true;$('workspace').hidden=false;document.body.classList.remove('welcome-screen');}
  function showWelcome(){$('workspace').hidden=true;$('welcome').hidden=false;document.body.classList.add('welcome-screen');}
- function historyState(){return {slides:slides.map(s=>({...s,segments:s.segments.map(v=>({...v})),ai:s.ai?{...s.ai}:null})),selectedId,title,videoInfo:videoInfo?{...videoInfo}:null,crop:crop?{...crop}:null,assistant:structuredClone(assistant?.snapshot())};}
+ function historyState(){return {slides:slides.map(s=>({...s,segments:s.segments.map(v=>({...v})),ai:s.ai?{...s.ai}:null})),selectedId,title,videoInfo:videoInfo?{...videoInfo}:null,crop:crop?{...crop}:null,assistant:structuredClone(assistant?.snapshot()),transcript:structuredClone(transcript)};}
  function remember(action,restoreAssistant=false){pendingHistory={before:historyState(),after:null,action,restoreAssistant};history.push(pendingHistory);if(history.length>50)history.shift();future=[];}
  function touch({historyRestore=false}={}){
   if(pendingHistory){pendingHistory.after=historyState();pendingHistory=null;}
@@ -38,6 +38,7 @@
   if(from.title!==to.title)title=to.title;
   if(JSON.stringify(from.videoInfo)!==JSON.stringify(to.videoInfo))videoInfo=to.videoInfo?{...to.videoInfo}:null;
   if(JSON.stringify(from.crop)!==JSON.stringify(to.crop))crop=to.crop?{...to.crop}:null;
+  if(JSON.stringify(from.transcript)!==JSON.stringify(to.transcript))transcript=structuredClone(to.transcript);
   assistant?.restore(entry.restoreAssistant?to.assistant:assistant.snapshot());
   const restored=historyState();opposite.push({...entry,before:redo?current:restored,after:redo?restored:current});
   touch({historyRestore:true});render();toast(`${entry.action} ${redo?'다시 실행':'실행 취소'}`);
@@ -181,6 +182,7 @@
   const s=selected(),v=!!videoUrl,available=slides.some(s=>s.included);
   $('exportPptx').disabled=!available||busy;$('exportPdf').disabled=!available||busy;
   $('assistantOpen').disabled=!slides.some(s=>s.included&&s.image)||busy;
+  $('transcriptOpen').disabled=!originalFile||busy;
   $('extract').disabled=!v||busy;$('extractSettings').disabled=!v||busy;$('extract').textContent=slides.length?'슬라이드 다시 추출':'자동 추출';$('cropButton').disabled=!v||busy;$('captureNew').disabled=!v||busy;$('replaceFrame').disabled=!v||!s||s.kind==='supplement'||busy;
   $('newLecture').disabled=busy;$('addSupplement').disabled=busy;$('duplicateSlide').disabled=!s||busy;$('moveUp').disabled=!s||slides.indexOf(s)===0||busy;$('moveDown').disabled=!s||slides.indexOf(s)===slides.length-1||busy;$('deleteSlide').disabled=!s||busy;$('undo').disabled=!history.length||busy;$('redo').disabled=!future.length||busy;$('showNotes').disabled=!s?.image||busy;
   $('undo').title=history.length?`${history.at(-1).action} 실행 취소 · ⌘/Ctrl+Z`:'페이지 작업 실행 취소 · ⌘/Ctrl+Z';$('redo').title=future.length?`${future.at(-1).action} 다시 실행 · ⌘/Ctrl+Shift+Z`:'페이지 작업 다시 실행 · ⌘/Ctrl+Shift+Z';
@@ -199,9 +201,9 @@
  }
  async function recovery(){
   try{
-   const raw=await dbOperation('readonly',s=>s.get('latest'));if(!raw?.slides?.length)return;
+   const raw=await dbOperation('readonly',s=>s.get('latest'));if(!raw?.slides?.length&&!raw?.transcript)return;
    const data=C.validateWorkspace(raw);for(const s of data.slides){s.notes=N.legacyMarkdown(s);s.notesFormat='markdown';}
-   data.assistant=raw.assistant;recoverable=data;
+   data.assistant=raw.assistant;try{data.transcript=window.StudioTranscript.restore(raw.transcript,data.video?.duration);}catch(_){data.transcript=null;}recoverable=data;
   }catch(err){/* Browser storage can be unavailable in private/file contexts. */}
  }
  async function loadVideo(file){
@@ -218,8 +220,8 @@
    if(!Number.isFinite(video.duration)||video.duration<=0)throw new Error('유한한 길이의 영상 파일이 필요합니다.');
    await recoveryReady;
    const restored=recoverable?.video?.name===file.name&&recoverable.video.size===file.size&&Math.abs(recoverable.video.duration-video.duration)<1;
-   if(restored){slides=recoverable.slides;title=recoverable.title;crop=recoverable.crop;selectedId=slides[0]?.id||null;history=[];future=[];pendingHistory=null;assistant?.restore(recoverable.assistant);recoverable=null;}
-   videoUrl=next;if(old)URL.revokeObjectURL(old);videoInfo={name:file.name,size:file.size,duration:video.duration,width:video.videoWidth,height:video.videoHeight};
+   if(restored){slides=recoverable.slides;title=recoverable.title;crop=recoverable.crop;transcript=recoverable.transcript;selectedId=slides[0]?.id||null;history=[];future=[];pendingHistory=null;assistant?.restore(recoverable.assistant);recoverable=null;}
+   videoUrl=next;originalFile=file;if(old)URL.revokeObjectURL(old);videoInfo={name:file.name,size:file.size,duration:video.duration,width:video.videoWidth,height:video.videoHeight};
    if(!crop)crop={x:0,y:0,width:video.videoWidth,height:video.videoHeight};
    if(!slides.length)title=file.name.replace(/\.[^.]+$/,'');
    video.style.display='block';$('videoPlaceholder').hidden=true;$('videoControls').hidden=false;$('toggleVideo').textContent='접기';
@@ -479,7 +481,7 @@
  async function newLecture(){
   if(slides.length&&!confirm('새 강의를 시작하면 현재 노트가 초기화됩니다. 완성본이 필요하면 PPTX·PDF로 내보내 주세요. 새 강의를 시작할까요?'))return;
   clearTimeout(saveTimer);selectionSeek?.abort();selectionSeek=null;lastVideoSelection=null;notesEditor?.destroy();notesEditor=null;editorSlideId=null;rawMode=false;if(videoUrl)URL.revokeObjectURL(videoUrl);videoUrl=null;videoInfo=null;crop=null;slides=[];selectedId=null;history=[];future=[];pendingHistory=null;dirty=false;title='새 강의자료';recoverable=null;
-  video.removeAttribute('src');video.load();video.style.display='none';$('videoPlaceholder').hidden=false;assistant?.reset();render();showWelcome();
+  transcript=null;originalFile=null;speechUI?.reset();video.removeAttribute('src');video.load();video.style.display='none';$('videoPlaceholder').hidden=false;assistant?.reset();render();showWelcome();
   try{await dbOperation('readwrite',s=>s.delete('latest'));}catch(_){}status('첫 화면에서 강의 영상을 선택해 주세요.');
  }
  function setMode(raw){
@@ -543,8 +545,9 @@
  $('progressDialog').addEventListener('close',()=>{if(!$('progressDialog').open){clearInterval(progressTimer);progressTimer=null;}});
  window.addEventListener('beforeunload',e=>{if(dirty||busy){e.preventDefault();e.returnValue='';}});
  assistant=window.StudioAssistant.create({
-  get:()=>({slides,title}),changed:touch,notify:message=>{status(message);toast(message);},
-  apply:(request,text,mode)=>{const result=window.StudioAI.applyReply(slides,request,text,C.blankSlide,mode);remember('AI 보완 반영',true);slides=result.slides;touch();render();return result;},
+  get:()=>({slides,title,transcript}),changed:touch,notify:message=>{status(message);toast(message);},
+  openTranscript:()=>speechUI.open(()=>assistant.open()),
+  apply:(request,text,mode)=>{const result=window.StudioAI.applyReply(slides,request,text,C.blankSlide,mode,transcript);remember('AI 보완 반영',true);slides=result.slides;touch();render();return result;},
   work:async task=>{
    if(busy)throw new Error('진행 중인 작업이 끝난 뒤 다시 시도해 주세요.');
    busy=true;controller=new AbortController();updateButtons();progress('ChatGPT가 강의자료를 보완하고 있습니다','원본 슬라이드와 필기를 읽습니다.',0);
@@ -552,7 +555,19 @@
    finally{await autoSave();controller=null;busy=false;$('progressDialog').close();updateButtons();}
   }
  });
+ speechUI=window.StudioTranscriptUI.create({
+  get:()=>({slides,title,transcript,video:videoInfo,file:originalFile}),
+  apply:next=>{if(busy)throw new Error('현재 작업을 마친 뒤 다시 시도해 주세요.');remember(next?'교수님 음성 기록 연결':'교수님 음성 기록 연결 해제',true);transcript=next;assistant.restore(assistant.snapshot());touch();render();status(next?'음성 기록을 연결했습니다. AI 보완에서 교수님 설명을 함께 정리할 수 있습니다.':'음성 기록 연결을 해제했습니다. 기존 노트는 유지됩니다.');},
+  openAI:()=>assistant.open(),
+  work:async task=>{
+   if(busy)throw new Error('진행 중인 작업이 끝난 뒤 다시 시도해 주세요.');
+   busy=true;controller=new AbortController();updateButtons();progress('클로바노트에 보낼 MP3를 준비하고 있습니다','원본 영상의 시간과 무음을 유지해 음성 파일을 만듭니다.',0);
+   try{return await task({signal:controller.signal,report:progress});}
+   finally{await autoSave();controller=null;busy=false;$('progressDialog').close();updateButtons();}
+  }
+ });
  $('assistantOpen').addEventListener('click',()=>assistant.open());
+ $('transcriptOpen').addEventListener('click',()=>speechUI.open());
  E.loadFonts().catch(err=>status(err.message));
  render();const recoveryReady=recovery();
 })();

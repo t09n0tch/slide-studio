@@ -1,0 +1,8 @@
+LAME JavaScript MP3 encoder, @breezystack/lamejs 1.2.7, LGPL-3.0.
+Upstream: https://github.com/shijinyu/lamejs/tree/1fb0ef5fa177413107e2e107d054a9b994e3f79c
+Original, preferred-form sources and build configuration are bundled as audio-sources/lamejs-1.2.7-source.tar.gz under the app Resources directory.
+Slide Studio repackages the npm distribution as CommonJS with esbuild without additional minification; it does not modify the encoder algorithm.
+Rebuild this wrapper: npm ci && npm run build:audio (dev/mp3-encoder.mjs and dev/build-audio.mjs).
+To rebuild a modified encoder: unpack the source archive, install its dependencies, run npm run build, then bundle the resulting dist/lamejs.js as CommonJS with esbuild. Export Mp3Encoder.
+Replace app.asar.unpacked/electron/mp3-encoder.cjs with the rebuilt encoder; audio-worker.cjs loads this replaceable library.
+No local speech recognition model or cloud API is used to create MP3 files.

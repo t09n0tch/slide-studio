@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const { pathToFileURL } = require('node:url');
 const { APP_URL, assetPath, downloadPath } = require('./paths.cjs');
 const { createChatGPT, publicError } = require('./chatgpt.cjs');
+const { createAudio, audioToolsPath, copyAudioFile } = require('./audio.cjs');
 
 app.setName('Slide Studio');
 const userData = process.env.SLIDE_STUDIO_USER_DATA || path.join(app.getPath('appData'), 'SlideStudio');
@@ -16,6 +17,7 @@ protocol.registerSchemesAsPrivileged([
 
 let window;
 let chatgpt;
+let audio;
 const pendingDownloads = new Set();
 const hasLock = app.requestSingleInstanceLock();
 if (!hasLock) app.quit();
@@ -36,7 +38,7 @@ else {
       webPreferences: { preload: path.join(__dirname, 'preload.cjs'), nodeIntegration: false, contextIsolation: true, sandbox: true, backgroundThrottling: false }
     });
     window.once('ready-to-show', () => window.show());
-    window.on('closed', () => { chatgpt?.cancel(); window = null; });
+    window.on('closed', () => { chatgpt?.cancel(); audio?.reset().catch(()=>{}); window = null; });
     window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
     window.webContents.on('will-navigate', (event, url) => { if (url !== APP_URL) event.preventDefault(); });
     window.webContents.on('will-attach-webview', event => event.preventDefault());
@@ -52,8 +54,29 @@ else {
     window.loadURL(APP_URL).catch(error => dialog.showErrorBox('Slide Studio를 열지 못했습니다', error.message));
   }
 
-  app.whenReady().then(() => {
+  app.whenReady().then(async () => {
     chatgpt = createChatGPT({storageDir:path.join(userData,'chatgpt'),safeStorage,openBrowser:url=>shell.openExternal(url)});
+    audio=createAudio({directory:path.join(userData,'audio-temporary'),ffmpeg:audioToolsPath({packaged:app.isPackaged,resources:process.resourcesPath,root:app.getAppPath()}),report:value=>{if(window&&!window.isDestroyed())window.webContents.send('studio:audio-progress',value);}});
+    await audio.reset();
+    ipcMain.handle('studio:audio',async(event,method,payload)=>{
+      if(!window||event.sender!==window.webContents||event.senderFrame!==window.webContents.mainFrame||event.senderFrame.url!==APP_URL)return{ok:false,error:{message:'지원하지 않는 화면입니다.'}};
+      try{
+        let value;
+        if(method==='prepare')value=await audio.prepare(payload||{});
+        else if(method==='cancel')audio.cancel();
+        else if(method==='reset')await audio.reset();
+        else if(method==='readText'){value=await clipboard.readText();if(value.length>1000000)throw new Error('스크립트가 너무 깁니다. 현재 강의의 원문만 복사해 주세요.');}
+        else if(method==='discard')value=await audio.discard(payload);
+        else if(method==='open')await shell.openExternal('https://clovanote.naver.com/');
+        else if(['copy','drag','reveal'].includes(method)){
+          const file=await audio.file(payload);
+          if(method==='copy')await copyAudioFile(file.path,{clipboard,ClipboardItem});
+          else if(method==='drag')event.sender.startDrag({file:file.path,icon:path.join(app.getAppPath(),'build','icon.png')});
+          else shell.showItemInFolder(file.path);
+        }else throw new Error('지원하지 않는 음성 파일 작업입니다.');
+        return{ok:true,value};
+      }catch(error){return{ok:false,error:{code:error.code||'audio_failed',message:error.code==='ENOENT'?'음성 파일을 다시 준비해 주세요.':error.message?.startsWith('Command failed')?'파일을 복사하지 못했습니다. MP3를 끌어놓거나 파일 위치를 열어 첨부해 주세요.':error.message||'음성 파일 작업을 완료하지 못했습니다.'}};}
+    });
     ipcMain.handle('studio:assistant', async (event, method, payload) => {
       if (!window || event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || event.senderFrame.url !== APP_URL) {
         return {ok:false,error:{code:'invalid_sender',message:'지원하지 않는 화면입니다.'}};
@@ -120,4 +143,6 @@ else {
     app.on('activate', () => { if (!BrowserWindow.getAllWindows().length) createWindow(); });
   }).catch(error => { dialog.showErrorBox('Slide Studio 실행 실패', error.message); app.exit(1); });
   app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
+  let audioCleanup=false;
+  app.on('will-quit',event=>{if(audio&&!audioCleanup){event.preventDefault();audioCleanup=true;audio.reset().catch(()=>{}).finally(()=>app.quit());}});
 }

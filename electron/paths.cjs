@@ -1,7 +1,7 @@
 const path = require('node:path');
 
 const APP_URL = 'app://studio/index.html';
-const ROOT_FILES = new Set(['index.html', 'style.css', 'editor.css', 'welcome.css', 'ai.css', 'icon.svg']);
+const ROOT_FILES = new Set(['index.html', 'style.css', 'editor.css', 'welcome.css', 'ai.css', 'transcript.css', 'icon.svg']);
 
 function assetPath(root, requestUrl) {
   try {

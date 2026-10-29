@@ -180,6 +180,13 @@ function createChatGPT({ storageDir, safeStorage, openBrowser, fetcher=globalThi
       if(typeof request.id!=='string'||request.id.length>100||typeof request.title!=='string'||request.title.length>200)throw problem('invalid_response');
       const ids=new Set();
       for(const ref of request.slides){if(!ref||typeof ref.id!=='string'||ref.id.length>100||typeof ref.title!=='string'||ref.title.length>200||!Number.isInteger(ref.number)||ids.has(ref.id)||(ref.existingNotes!==undefined&&(typeof ref.existingNotes!=='string'||ref.existingNotes.length>3000)))throw problem('invalid_response');ids.add(ref.id);}
+      let speechLength=0;
+      for(const ref of request.slides)if(ref.speech){
+        const speech=ref.speech;if(speech.source!=='clovanote'||typeof speech.fingerprint!=='string'||speech.fingerprint.length>100||!Array.isArray(speech.cues)||speech.cues.length>10000||!Array.isArray(speech.intervals)||speech.intervals.length>10000)throw problem('invalid_response');
+        for(const span of speech.intervals)if(!Number.isFinite(span.start)||!Number.isFinite(span.end)||span.start<0||span.end<span.start)throw problem('invalid_response');
+        for(const cue of speech.cues){if(!Number.isFinite(cue.start)||!Number.isFinite(cue.end)||cue.start<0||cue.end<cue.start||typeof cue.text!=='string'||typeof cue.speaker!=='string'||cue.speaker.length>100)throw problem('invalid_response');speechLength+=cue.text.length;}
+      }
+      if(speechLength>1000000)throw problem('invalid_response');
       for(let i=0;i<images.length;i++){if(images[i]?.slideId!==request.slides[i].id||typeof images[i].dataUrl!=='string'||images[i].dataUrl.length>5*1024*1024||!/^data:image\/(?:jpeg|png);base64,[A-Za-z0-9+/=]+$/.test(images[i].dataUrl))throw problem('invalid_response');}
       const token=await tokenForRequest(signal);
       if(catalog?.profileId!==token.profileId)await models();

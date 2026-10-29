@@ -3,7 +3,9 @@ module.exports = {
   productName: 'Slide Studio',
   directories: { output: 'dist', buildResources: 'build' },
   asar: true,
+  asarUnpack:['electron/audio-worker.cjs','electron/mp3-encoder.cjs'],
   npmRebuild: false,
+  extraResources:[{from:`build/audio-tools/${process.platform}-\${arch}`,to:'audio-tools'},{from:'build/audio-tools/sources',to:'audio-sources'}],
   files: [
     'index.html', '*.css', 'icon.svg', 'js/**/*', 'vendor/**/*',
     'electron/**/*', 'build/icon.png', 'package.json', 'LICENSE', 'README.md'

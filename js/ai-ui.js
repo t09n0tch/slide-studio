@@ -23,9 +23,12 @@
   const state=()=>hooks.get(),error=err=>{$('aiError').textContent=err.message||String(err);$('aiError').hidden=false;};
   const clearError=()=>{$('aiError').hidden=true;$('aiError').textContent='';};
   const changed=()=>hooks.changed();
-  function counts(){const all=A.sources(state().slides),left=A.pending(state().slides);return {all:all.length,left:left.length,done:all.length-left.length};}
+  function counts(){const current=state(),all=A.sources(current.slides),left=A.pending(current.slides,current.transcript);return {all:all.length,left:left.length,done:all.length-left.length};}
   function render(){
     const count=counts(),fresh=!state().slides.length;
+    const spoken=state().transcript?.cues?.length||0;
+    $('aiSourceNotice').textContent=spoken?`AI 학습 보완 · 클로바노트 음성 기록 ${spoken}개 문단을 슬라이드 시간에 맞춰 함께 사용합니다.`:'AI 학습 보완 · 교수님 음성은 포함되지 않습니다.';
+    $('aiSpeechSummary').textContent=spoken?'가져온 교수님 음성 기록을 함께 보냅니다.':'교수님 설명도 넣으려면 클로바노트 스크립트를 먼저 가져오세요.';
     $('aiSkip').textContent=fresh?'보완 없이 슬라이드만 추출':'편집 화면으로 돌아가기';
     $('aiChoices').hidden=mode!=='none';$('aiPaidPanel').hidden=mode!=='paid';$('aiFreePanel').hidden=mode!=='manual';
     $('aiTitle').textContent=mode==='none'?'강의자료를 어떻게 보완할까요?':mode==='paid'?'ChatGPT로 자동 보완':'무료 계정으로 보완';
@@ -72,7 +75,7 @@
     if(value==='paid')automatic().catch(error);else prepare().catch(error);
   }
   async function prepare(){
-    if(preparing)return;clearError();const current=state();request=A.restoreRequest(request,current.slides)||A.createRequest(current.slides,current.title,$('aiBatchSize').value);preparing=true;changed();render();
+    if(preparing)return;clearError();const current=state();request=A.restoreRequest(request,current.slides,current.transcript)||A.createRequest(current.slides,current.title,$('aiBatchSize').value,undefined,current.transcript);preparing=true;changed();render();
     try{
       const blob=previewRequestId===request.id&&preparedBlob?preparedBlob:await sheet(request,current.slides);showPrepared(blob,request);
       try{await copy(A.prompt(request));copiedHint('text');}
@@ -99,12 +102,12 @@
     clearError();if(!session?.sharing||!$('aiModel').value||!$('aiConsent').checked){error(new Error('계정과 모델을 선택하고 슬라이드 전송에 동의해 주세요.'));return;}
     $('aiDialog').close();working=true;
     try{
-      const total=A.pending(state().slides).length;
+      const total=A.pending(state().slides,state().transcript).length;
       await hooks.work(async({signal,report})=>{
         const cancel=()=>native('cancel').catch(()=>{});signal.addEventListener('abort',cancel,{once:true});let done=0;
         try{
-          while(A.pending(state().slides).length){
-            signal.throwIfAborted();const current=state(),batch=A.createRequest(current.slides,current.title,4);
+          while(A.pending(state().slides,state().transcript).length){
+            signal.throwIfAborted();const current=state(),batch=A.createRequest(current.slides,current.title,4,undefined,current.transcript);
             report('ChatGPT가 강의자료를 보완하고 있습니다',`${done} / ${total}장 완료 · 현재 ${batch.slides.map(s=>s.number).join(', ')}번 슬라이드`,done/total);
             const images=[];for(const ref of batch.slides){signal.throwIfAborted();images.push({slideId:ref.id,dataUrl:await resize(current.slides.find(s=>s.id===ref.id).image)});}
             signal.throwIfAborted();const response=await native('generate',{request:batch,images,model:$('aiModel').value,consented:true});
@@ -118,6 +121,7 @@
     finally{working=false;render();}
   }
   $('aiChoosePaid').addEventListener('click',()=>select('paid'));$('aiChooseFree').addEventListener('click',()=>select('manual'));
+  $('aiTranscriptOpen').addEventListener('click',()=>{$('aiDialog').close();hooks.openTranscript();});
   $('aiSwitchFree').addEventListener('click',()=>select('manual'));$('aiSwitchPaid').addEventListener('click',()=>select('paid'));
   $('aiClose').addEventListener('click',close);$('aiSkip').addEventListener('click',close);$('aiDialog').addEventListener('cancel',event=>{event.preventDefault();close();});
   $('aiSignIn').addEventListener('click',()=>connect());$('aiAddAccount').addEventListener('click',()=>connect(true));$('aiCancelLogin').addEventListener('click',()=>native('cancel').catch(error));
@@ -139,7 +143,7 @@
     chooseWorkflow(){mode='none';request=null;clearError();render();$('aiDialog').showModal();return new Promise(resolve=>{choice=resolve;});},
     async afterExtraction(value){if(!value)return;mode=value;render();if(value==='paid')await automatic();else{if(!$('aiDialog').open)$('aiDialog').showModal();await prepare().catch(error);}},
     snapshot(){return {mode,request};},
-    restore(value){mode=['manual','paid'].includes(value?.mode)?value.mode:'none';request=A.restoreRequest(value?.request,state().slides);render();},
+    restore(value){mode=['manual','paid'].includes(value?.mode)?value.mode:'none';request=A.restoreRequest(value?.request,state().slides,state().transcript);render();},
     reset(){mode='none';request=null;openedChatGPT=false;clearError();if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl=null;previewRequestId=null;preparedBlob=null;render();},
     cancel(){return native('cancel').catch(()=>{});}
   };

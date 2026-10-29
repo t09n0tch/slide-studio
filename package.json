@@ -1,7 +1,7 @@
 {
   "name": "slide-studio",
   "productName": "Slide Studio",
-  "version": "0.9.3",
+  "version": "0.10.0",
   "private": true,
   "description": "Local lecture slide extraction with optional ChatGPT plan integration and guided learning-note import.",
   "license": "MIT",
@@ -14,15 +14,18 @@
   },
   "scripts": {
     "start": "electron .",
-    "test": "node --test tests/core.test.cjs tests/desktop.test.cjs tests/ai.test.cjs tests/chatgpt.test.cjs",
+    "test": "node --test tests/core.test.cjs tests/desktop.test.cjs tests/ai.test.cjs tests/chatgpt.test.cjs tests/transcript.test.cjs tests/audio.test.cjs",
     "test:desktop": "node tests/desktop-smoke.cjs",
     "test:assistant": "node tests/assistant-smoke.cjs",
+    "test:transcript": "node tests/transcript-smoke.cjs",
     "test:editing": "node tests/editing-smoke.cjs",
     "test:usability": "node tests/usability-smoke.cjs",
     "test:packaged": "node tests/desktop-smoke.cjs --packaged",
     "build:editor": "node dev/build-editor.mjs",
     "build:ai": "node dev/build-ai.mjs",
-    "predist": "node dev/sync-version.cjs",
+    "build:audio": "node dev/build-audio.mjs",
+    "predist": "node dev/prepare-desktop.mjs",
+    "prepack": "node dev/prepare-desktop.mjs",
     "pack": "electron-builder --dir --publish never",
     "dist": "electron-builder --publish never",
     "verify:assets": "node dev/verify-assets.cjs",
@@ -32,6 +35,7 @@
     "test:clipboard:browser": "node tests/clipboard-browser-smoke.cjs"
   },
   "devDependencies": {
+    "@breezystack/lamejs": "1.2.7",
     "@electron/asar": "4.3.1",
     "@tiptap/core": "3.32.0",
     "@tiptap/extension-placeholder": "3.32.0",

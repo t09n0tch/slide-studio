@@ -55,4 +55,8 @@ test('image inference uses only the public Responses route, selected catalog mod
  await assert.rejects(h.client.generate({request,images,model:'test-vision'}));await assert.rejects(h.client.generate({request,images,model:'hidden',consented:true}),e=>e.code==='model_unavailable');
  assert.equal((await h.client.generate({request,images,model:'test-vision',consented:true})).text,'completed text');
  const call=h.calls.find(c=>c.url.endsWith('/responses')),body=JSON.parse(call.options.body);assert.equal(call.url,'https://api.openai.com/v1/responses');assert.equal(call.options.redirect,'error');assert.equal(body.store,false);assert.equal(body.stream,true);assert.equal(body.input[0].content.at(-1).type,'input_image');assert.deepEqual(Object.keys(body).sort(),['input','model','store','stream']);
+ const withSpeech=structuredClone(request);withSpeech.slides[0].speech={source:'clovanote',fingerprint:'speech-fixture',intervals:[{start:0,end:35}],cues:[{start:0,end:35,speaker:'참석자 1',text:'A reason spoken by the lecturer.'}]};
+ await h.client.generate({request:withSpeech,images,model:'test-vision',consented:true});
+ const speechBody=JSON.parse(h.calls.filter(c=>c.url.endsWith('/responses')).at(-1).options.body);assert.ok(JSON.stringify(speechBody).includes('A reason spoken by the lecturer.'));assert.ok(JSON.stringify(speechBody).includes('lecturerTranscript'));
+ const sent=h.calls.filter(c=>c.url.endsWith('/responses')).length;withSpeech.slides[0].speech.cues[0].start=-1;await assert.rejects(h.client.generate({request:withSpeech,images,model:'test-vision',consented:true}),e=>e.code==='invalid_response');assert.equal(h.calls.filter(c=>c.url.endsWith('/responses')).length,sent);
 });

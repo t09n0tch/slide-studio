@@ -4,10 +4,10 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'none'; img-src 'self' data: blob:; media-src blob:; font-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Slide Studio · 나만의 강의자료</title>
-<link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="editor.css"><link rel="stylesheet" href="welcome.css"><link rel="stylesheet" href="ai.css">
+<link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="editor.css"><link rel="stylesheet" href="welcome.css"><link rel="stylesheet" href="ai.css"><link rel="stylesheet" href="transcript.css">
 <script defer src="vendor/jszip.min.js"></script><script defer src="vendor/pptxgen.bundle.js"></script><script defer src="vendor/pdf-lib.min.js"></script><script defer src="vendor/fontkit.umd.js"></script><script defer src="vendor/font-data.js"></script><script defer src="vendor/font-latin-data.js"></script>
 <script defer src="vendor/font-bold-data.js"></script><script defer src="vendor/notes-editor.js"></script>
-<script defer src="js/core.js"></script><script defer src="js/export.js"></script><script defer src="js/ai.js"></script><script defer src="js/ai-ui.js"></script><script defer src="js/app.js"></script>
+<script defer src="js/core.js"></script><script defer src="js/export.js"></script><script defer src="js/transcript.js"></script><script defer src="js/transcript-ui.js"></script><script defer src="js/ai.js"></script><script defer src="js/ai-ui.js"></script><script defer src="js/app.js"></script>
 </head>
 <body class="welcome-screen">
 <header class="app-header">
@@ -15,7 +15,7 @@
  <div class="header-middle"><span class="local-dot"></span> 영상 추출은 내 컴퓨터에서</div>
  <nav class="header-actions" aria-label="파일 작업">
   
-  <button id="assistantOpen" disabled>AI 보완</button><button id="exportPptx" disabled>PPTX ↓</button><button id="exportPdf" class="primary" disabled>PDF ↓</button>
+  <button id="transcriptOpen" disabled>교수님 음성</button><button id="assistantOpen" disabled>AI 보완</button><button id="exportPptx" disabled>PPTX ↓</button><button id="exportPdf" class="primary" disabled>PDF ↓</button>
  </nav>
 </header>
 <main id="welcome" class="welcome">
@@ -76,7 +76,7 @@
   </aside>
  </div>
 </section>
-<footer class="status-bar"><span id="status">영상 추출은 로컬에서 처리합니다. AI 보완은 선택한 슬라이드를 전송합니다.</span><span>v0.9.3 · 로컬 실행</span></footer>
+<footer class="status-bar"><span id="status">영상 추출은 로컬에서 처리합니다. AI 보완은 선택한 슬라이드를 전송합니다.</span><span>v0.10.0 · 로컬 실행</span></footer>
 <input id="videoFile" type="file" accept="video/*,.mp4,.m4v,.webm,.mov" hidden><input id="notesFile" type="file" accept=".md,.markdown,.txt,text/plain,text/markdown" hidden>
 <dialog id="cropDialog" class="settings-dialog crop-dialog" aria-labelledby="cropTitle">
  <div class="dialog-title"><h2 id="cropTitle">슬라이드 영역</h2><button id="closeCrop" class="icon-button" aria-label="닫기">×</button></div>
@@ -112,7 +112,7 @@
   <div id="aiAccountControls" class="ai-inline" hidden><label class="sr-only" for="aiAccount">ChatGPT 계정</label><select id="aiAccount"></select><button id="aiAddAccount" class="quiet">계정 추가</button><button id="aiDisconnect" class="quiet">연결 해제</button></div>
   <div id="aiPlanWelcome" class="ai-notice" hidden>이 앱의 AI 요청은 연결한 ChatGPT 플랜의 사용량을 사용합니다. ChatGPT 설정에서 앱별 한도를 관리할 수 있습니다.<button id="aiAcknowledge" class="text-button">확인</button></div>
   <label for="aiModel">사용할 모델</label><div class="ai-inline"><select id="aiModel" disabled><option value="">로그인 후 사용할 수 있는 모델을 확인합니다</option></select><button id="aiRefreshModels" class="quiet">새로고침</button></div>
-  <label class="check-label ai-consent"><input id="aiConsent" type="checkbox">슬라이드 이미지와 기존 노트를 OpenAI로 보내고, 내 ChatGPT 사용량으로 보완합니다.</label>
+  <label class="check-label ai-consent"><input id="aiConsent" type="checkbox">슬라이드 이미지·기존 노트·가져온 음성 기록을 OpenAI로 보내고, 내 ChatGPT 사용량으로 보완합니다.</label>
   <div class="ai-actions"><button id="aiPaidStart" class="primary" disabled>추출하고 자동 보완</button><button id="aiUsage" class="quiet">사용량 관리</button></div>
   <p id="aiPaidSummary" class="micro"></p><button id="aiSwitchFree" class="text-button">무료 계정 방식으로 이어가기</button>
  </section>
@@ -127,8 +127,19 @@
   </ol>
   <p id="aiFreeSummary" class="ai-notice" aria-live="polite">반영한 노트는 자동 저장됩니다. 한도에 도달하면 나중에 이어갈 수 있습니다.</p><button id="aiSwitchPaid" class="text-button">ChatGPT 로그인으로 자동 보완하기</button>
  </section>
+ <div class="speech-ai-entry"><p id="aiSpeechSummary" class="micro">교수님 설명도 넣으려면 클로바노트 스크립트를 먼저 가져오세요.</p><button id="aiTranscriptOpen" type="button">교수님 음성 가져오기</button></div>
  <p id="aiError" class="ai-error" role="alert" hidden></p>
- <div class="ai-bottom"><span class="micro">AI 학습 보완 · 교수님 음성은 포함되지 않습니다.</span><button id="aiSkip" class="quiet">보완 없이 슬라이드만 추출</button></div>
+ <div class="ai-bottom"><span id="aiSourceNotice" class="micro">AI 학습 보완 · 교수님 음성은 포함되지 않습니다.</span><button id="aiSkip" class="quiet">보완 없이 슬라이드만 추출</button></div>
+</dialog>
+<dialog id="speechDialog" class="settings-dialog speech-dialog" aria-labelledby="speechTitle">
+ <div class="dialog-title"><h2 id="speechTitle">클로바노트로 교수님 음성 가져오기</h2><button id="speechClose" class="icon-button" aria-label="닫기">×</button></div>
+ <div id="speechLecture" class="speech-lecture"></div>
+ <ol class="speech-steps">
+  <li><strong>MP3를 클로바노트에 첨부</strong><p>MP3를 준비한 뒤 클로바노트의 ‘새 노트’에 끌어놓으세요. 음성 인식은 클로바노트 계정에서 진행됩니다.</p><div class="speech-actions"><button id="speechPrepare" class="primary">MP3 준비·파일 복사</button><button id="speechOpenClova">클로바노트 열기 ↗</button></div><div id="speechFiles"></div><p id="speechHint" class="micro" role="status">MP3는 앱의 임시 공간에서 준비합니다. 다운로드 폴더에 저장하지 않습니다.</p><p class="micro">180분이 넘는 강의는 파일을 나눕니다. 각 파일은 영상의 원래 시작 시각과 함께 표시됩니다.</p></li>
+  <li><strong>스크립트 복사 후 한 번에 연결</strong><p>클로바노트에서 <b>참석자·시간이 포함된 음성 기록 원문</b>을 복사한 뒤 아래 버튼을 누르세요. 줄바꿈 없이 이어진 원문도 받을 수 있습니다.</p><div id="speechOffsetRow" class="speech-offset" hidden><label>가져올 MP3 구간<select id="speechPart"><option value="">전체 원본 영상</option></select></label><label>영상 기준 시작 시각<input id="speechOffset" value="00:00" aria-label="스크립트 영상 기준 시작 시각"></label></div><div class="speech-actions"><button id="speechPaste" class="primary">스크립트 붙여넣고 연결</button><button id="speechFileButton">TXT·SRT 파일 가져오기</button><input id="speechFile" type="file" accept=".txt,.srt,.vtt,text/plain" hidden></div><details id="speechManual"><summary>직접 붙여넣기</summary><textarea id="speechText" maxlength="1000000" aria-label="클로바노트 스크립트 원문" placeholder="참석자 1 00:00 교수님 설명… 참석자 1 00:35 이어지는 설명…"></textarea></details></li>
+ </ol>
+ <p id="speechSummary" class="ai-notice" aria-live="polite"></p><details id="speechExisting" hidden><summary>연결한 원문 보기</summary><pre id="speechOriginal" class="speech-original"></pre></details>
+ <p id="speechError" class="ai-error" role="alert" hidden></p><div class="dialog-actions"><button id="speechClear" class="quiet" disabled>음성 기록 연결 해제</button><button id="speechUseAI" class="primary" disabled>음성 포함해 AI 보완</button></div>
 </dialog>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 <noscript>이 프로그램을 사용하려면 브라우저의 JavaScript를 켜 주세요.</noscript>
