@@ -3,6 +3,10 @@
   "release": "https://github.com/serversideup/ffmpeg-lgpl-builds/releases/download/v8.1.2-27",
   "source": "https://ffmpeg.org/releases/ffmpeg-8.1.2.tar.xz",
   "sourceSha256": "464beb5e7bf0c311e68b45ae2f04e9cc2af88851abb4082231742a74d97b524c",
+  "licenses": {
+    "LGPL-3.0.txt":"da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768",
+    "GPL-3.0.txt":"8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+  },
   "sources": [
     {"name":"ffmpeg-8.1.2.tar.xz","url":"https://ffmpeg.org/releases/ffmpeg-8.1.2.tar.xz","bundled":"dev/audio-sources/ffmpeg-8.1.2.tar.xz","sha256":"464beb5e7bf0c311e68b45ae2f04e9cc2af88851abb4082231742a74d97b524c"},
     {"name":"ffmpeg-lgpl-builds-v8.1.2-27.tar.gz","url":"https://codeload.github.com/serversideup/ffmpeg-lgpl-builds/tar.gz/refs/tags/v8.1.2-27","sha256":"36f06c21da37ab4674adac2871f2ed514092eaac12169be5f679b122daedf804"},

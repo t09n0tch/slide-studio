@@ -59,9 +59,9 @@ const pkg=path.join(root,'node_modules','@breezystack','lamejs');
 const names=await fs.readdir(pkg),license=names.find(name=>/^licen[sc]e(?:\.|$)/i.test(name));
 if(!license)throw new Error('LAME license not found.');
 await fs.copyFile(path.join(pkg,license),path.join(root,'electron/LAME-LICENSE.txt'));
-for(const [from,to] of [['COPYING.LGPLv3','LGPL-3.0.txt'],['COPYING.GPLv3','GPL-3.0.txt']]){
-  const text=execFileSync('tar',['-xOf',path.join(sourceFolder,`ffmpeg-${manifest.version}.tar.xz`),`ffmpeg-${manifest.version}/${from}`],{timeout:90000,windowsHide:true});
-  await fs.writeFile(path.join(root,'electron',to),text);
+for(const [name,expected] of Object.entries(manifest.licenses)){
+  const bytes=await fs.readFile(path.join(root,'electron',name));
+  if(crypto.createHash('sha256').update(bytes).digest('hex')!==expected)throw new Error(`Bundled license differs from the upstream original: ${name}`);
 }
 await fs.writeFile(path.join(root,'electron/LAME-SOURCE.txt'),'LAME JavaScript MP3 encoder, @breezystack/lamejs 1.2.7, LGPL-3.0.\nUpstream: https://github.com/shijinyu/lamejs/tree/1fb0ef5fa177413107e2e107d054a9b994e3f79c\nOriginal, preferred-form sources and build configuration are bundled as audio-sources/lamejs-1.2.7-source.tar.gz under the app Resources directory.\nSlide Studio repackages the npm distribution as CommonJS with esbuild without additional minification; it does not modify the encoder algorithm.\nRebuild this wrapper: npm ci && npm run build:audio (dev/mp3-encoder.mjs and dev/build-audio.mjs).\nTo rebuild a modified encoder: unpack the source archive, install its dependencies, run npm run build, then bundle the resulting dist/lamejs.js as CommonJS with esbuild. Export Mp3Encoder.\nReplace app.asar.unpacked/electron/mp3-encoder.cjs with the rebuilt encoder; audio-worker.cjs loads this replaceable library.\nNo local speech recognition model or cloud API is used to create MP3 files.\n');
 console.log(`Bundled verified FFmpeg ${manifest.version} (${process.platform}/${process.arch}) and replaceable LAME encoder with licenses and original sources.`);
