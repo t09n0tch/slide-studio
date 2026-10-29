@@ -14,8 +14,8 @@
     {"name":"openssl-3.5.7.tar.gz","url":"https://github.com/openssl/openssl/releases/download/openssl-3.5.7/openssl-3.5.7.tar.gz","sha256":"a8c0d28a529ca480f9f36cf5792e2cd21984552a3c8e4aa11a24aa31aeac98e8"}
   ],
   "targets": {
-    "darwin-arm64": {"triple": "aarch64-apple-darwin", "sha256": "ac0babf65798bf681da1dc81c4fe4ae049d0d26e161410174b0e120e3e783332"},
-    "darwin-x64": {"triple": "x86_64-apple-darwin", "sha256": "51ac761dde58a600bb685a5d2510ae38d6ade1f62ef2ef556263c67cb69f2b00"},
-    "win32-x64": {"triple": "x86_64-pc-windows-msvc", "sha256": "fb2de01912edb449a5eba1cc487696c7f71ebb7b325e5c5c69434642ec2ba6b0"}
+    "darwin-arm64": {"triple": "aarch64-apple-darwin", "sha256": "ac0babf65798bf681da1dc81c4fe4ae049d0d26e161410174b0e120e3e783332", "notices":["COPYING.LGPLv2.1","SOURCE.txt","OPENSSL-LICENSE","FFMPEG-LICENSE.md"]},
+    "darwin-x64": {"triple": "x86_64-apple-darwin", "sha256": "51ac761dde58a600bb685a5d2510ae38d6ade1f62ef2ef556263c67cb69f2b00", "notices":["COPYING.LGPLv2.1","SOURCE.txt","OPENSSL-LICENSE","FFMPEG-LICENSE.md"]},
+    "win32-x64": {"triple": "x86_64-pc-windows-msvc", "sha256": "fb2de01912edb449a5eba1cc487696c7f71ebb7b325e5c5c69434642ec2ba6b0", "notices":["COPYING.LGPLv2.1","SOURCE.txt","LIBVPL-LICENSE.txt","LIBWINPTHREAD-LICENSE.txt","LIBOPENH264-LICENSE.txt","GCC-LICENSE.txt"]}
   }
 }

@@ -15,7 +15,7 @@ const { execFileSync } = require('node:child_process');
   for (const name of ['audio-worker.cjs','mp3-encoder.cjs']) assert.ok(fs.statSync(path.join(resources,'app.asar.unpacked','electron',name)).size>0,name);
   const tools=path.join(resources,'audio-tools'),manifest=require('./audio-tools.json');
   for (const [name,expected] of Object.entries(manifest.licenses)) assert.equal(crypto.createHash('sha256').update(asar.extractFile(archive,`electron/${name}`)).digest('hex'),expected,name);
-  for (const name of ['COPYING.LGPLv2.1','FFMPEG-LICENSE.md','SOURCE.txt','SLIDE-STUDIO-SOURCE.txt']) assert.ok(fs.statSync(path.join(tools,name)).size>0,name);
+  for (const name of [...manifest.targets[`${process.platform}-${process.arch}`].notices,'SLIDE-STUDIO-SOURCE.txt']) assert.ok(fs.statSync(path.join(tools,name)).size>0,name);
   const binary=path.join(tools,process.platform==='win32'?'ffmpeg.exe':'ffmpeg');
   const version=execFileSync(binary,['-version'],{encoding:'utf8',timeout:30000,windowsHide:true});
   assert.ok(version.startsWith(`ffmpeg version ${manifest.version}`),'FFmpeg version');

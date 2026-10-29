@@ -52,6 +52,7 @@ try {await fs.access(binary);} catch {
 console.log(`Checking audio decoder ${process.platform}/${process.arch}`);
 const version=execFileSync(binary,['-version'],{encoding:'utf8',timeout:30000,windowsHide:true});
 if(!version.startsWith(`ffmpeg version ${manifest.version}`)||/--enable-(?:gpl|nonfree|version3)\b/.test(version))throw new Error('Unexpected FFmpeg version or license configuration.');
+for(const name of target.notices)if(!(await fs.stat(path.join(folder,name))).size)throw new Error(`Missing upstream license or source notice: ${name}`);
 await fs.rm(path.join(folder,process.platform==='win32'?'ffprobe.exe':'ffprobe'),{force:true});
 await fs.writeFile(path.join(folder,'SLIDE-STUDIO-SOURCE.txt'),`FFmpeg ${manifest.version}, unmodified LGPL-2.1 executable, invoked as a separate process.\nBuilds: ${manifest.release}\nCorresponding source: ${manifest.source}\nSource SHA-256: ${manifest.sourceSha256}\nRebuild instructions: https://github.com/serversideup/ffmpeg-lgpl-builds/tree/v8.1.2-27\nOriginal FFmpeg/OpenSSL sources and the matching build scripts are bundled in ../audio-sources/.\nBundled license and dependency notices are in this directory.\n`);
 await build({entryPoints:[path.join(root,'dev/mp3-encoder.mjs')],outfile:path.join(root,'electron/mp3-encoder.cjs'),bundle:true,platform:'node',format:'cjs',minify:false,legalComments:'inline',banner:{js:'/* LAME JavaScript encoder, @breezystack/lamejs 1.2.7, LGPL-3.0. See LAME-LICENSE.txt and LAME-SOURCE.txt for original source and replacement instructions. */'}});
