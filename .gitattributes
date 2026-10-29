@@ -3,6 +3,7 @@
 *.png binary
 *.ico binary
 *.icns binary
+*.tar.xz binary
 
 # Preserve upstream license text and generated library string literals verbatim.
 electron/LAME-LICENSE.txt -whitespace

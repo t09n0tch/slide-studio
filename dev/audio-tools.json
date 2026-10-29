@@ -4,7 +4,7 @@
   "source": "https://ffmpeg.org/releases/ffmpeg-8.1.2.tar.xz",
   "sourceSha256": "464beb5e7bf0c311e68b45ae2f04e9cc2af88851abb4082231742a74d97b524c",
   "sources": [
-    {"name":"ffmpeg-8.1.2.tar.xz","url":"https://ffmpeg.org/releases/ffmpeg-8.1.2.tar.xz","sha256":"464beb5e7bf0c311e68b45ae2f04e9cc2af88851abb4082231742a74d97b524c"},
+    {"name":"ffmpeg-8.1.2.tar.xz","url":"https://ffmpeg.org/releases/ffmpeg-8.1.2.tar.xz","bundled":"dev/audio-sources/ffmpeg-8.1.2.tar.xz","sha256":"464beb5e7bf0c311e68b45ae2f04e9cc2af88851abb4082231742a74d97b524c"},
     {"name":"ffmpeg-lgpl-builds-v8.1.2-27.tar.gz","url":"https://codeload.github.com/serversideup/ffmpeg-lgpl-builds/tar.gz/refs/tags/v8.1.2-27","sha256":"36f06c21da37ab4674adac2871f2ed514092eaac12169be5f679b122daedf804"},
     {"name":"lamejs-1.2.7-source.tar.gz","url":"https://codeload.github.com/shijinyu/lamejs/tar.gz/1fb0ef5fa177413107e2e107d054a9b994e3f79c","sha256":"af8f08f0ff9a13777f2ffff737b48e40019b53a4b21db270dd62e829574e2b83"},
     {"name":"openssl-3.5.7.tar.gz","url":"https://github.com/openssl/openssl/releases/download/openssl-3.5.7/openssl-3.5.7.tar.gz","sha256":"a8c0d28a529ca480f9f36cf5792e2cd21984552a3c8e4aa11a24aa31aeac98e8"}

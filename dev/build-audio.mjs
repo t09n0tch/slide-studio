@@ -31,7 +31,7 @@ await Promise.all(manifest.sources.map(async source=>{
   const target=path.join(sourceFolder,source.name);let bytes;
   try{bytes=await fs.readFile(target);}catch{}
   if(!bytes||crypto.createHash('sha256').update(bytes).digest('hex')!==source.sha256){
-    bytes=await download(source.url);
+    bytes=source.bundled?await fs.readFile(path.join(root,source.bundled)):await download(source.url);
     if(crypto.createHash('sha256').update(bytes).digest('hex')!==source.sha256)throw new Error(`Audio source checksum does not match: ${source.name}`);
     await fs.writeFile(target,bytes);
     console.log(`Verified source ${source.name} (${bytes.length} bytes)`);

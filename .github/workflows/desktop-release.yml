@@ -5,6 +5,11 @@ on:
     tags: ['v*']
   pull_request:
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish installers after all platform checks pass
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -98,7 +103,7 @@ jobs:
   publish:
     name: Publish all three downloads
     needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.publish)
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -123,11 +128,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          tag="$GITHUB_REF_NAME"
+          tag="$(node -p "'v'+require('./package.json').version")"
+          node <<'NODE'
+          const {execFileSync}=require('node:child_process');
+          const tag=`v${require('./package.json').version}`;
+          const refs=execFileSync('git',['ls-remote','--tags','origin',`refs/tags/${tag}`,`refs/tags/${tag}^{}`],{encoding:'utf8'}).trim();
+          if(refs){const lines=refs.split(/\r?\n/),target=lines.find(line=>line.endsWith('^{}'))||lines[0];if(target.split(/\s+/)[0]!==process.env.GITHUB_SHA)throw Error('Release tag must match the tested commit');}
+          NODE
           if gh release view "$tag" --json isDraft > release-state.json 2>/dev/null; then
             node -e 'if(!require("./release-state.json").isDraft)throw Error("Published releases are immutable; use a new version")'
           else
-            gh release create "$tag" --draft --verify-tag --title "Slide Studio $tag" --notes-file RELEASE_NOTES.md
+            gh release create "$tag" --draft --target "$GITHUB_SHA" --title "Slide Studio $tag" --notes-file RELEASE_NOTES.md
           fi
           gh release upload "$tag" release-files/* --clobber
           gh release edit "$tag" --draft=false --latest

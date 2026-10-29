@@ -1,7 +1,7 @@
 {
   "name": "slide-studio",
   "productName": "Slide Studio",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "private": true,
   "description": "Local lecture slide extraction with optional ChatGPT plan integration and guided learning-note import.",
   "license": "MIT",
