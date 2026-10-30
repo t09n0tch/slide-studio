@@ -20,6 +20,8 @@
 
 현재 배포본은 정식 개발자 인증서 서명과 Apple 공증을 받지 않았습니다. 첫 실행 확인이나 차단이 표시될 수 있습니다. Mac은 [Apple의 확인 방법](https://support.apple.com/ko-kr/102445)을 참고하세요. 소스 코드 ZIP은 설치 파일이 아닙니다.
 
+Mac 개발판에서 AI를 연결하거나 업데이트하면 연결 정보 암호화를 위해 키체인 접근 확인이 표시될 수 있습니다. 본인이 설치한 Slide Studio인지 확인해 macOS 창에서 응답하세요. 암호화 처리는 비동기로 실행하며, 저장소가 일시적으로 잠긴 경우 연결 정보를 지우지 않고 다시 시도할 수 있습니다. [Electron의 키체인·코드 서명 안내](https://www.electronjs.org/docs/latest/api/safe-storage)
+
 ## 편집 화면
 
 ![실제 보충 설명 썸네일, 강의노트 툴바와 우측 하단 원본 영상](docs/images/editor.png)
