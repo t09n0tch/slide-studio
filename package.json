@@ -1,9 +1,9 @@
 {
   "name": "slide-studio",
   "productName": "Slide Studio",
-  "version": "0.10.2",
+  "version": "0.11.0",
   "private": true,
-  "description": "Local lecture slide extraction with optional ChatGPT plan integration and guided learning-note import.",
+  "description": "Local lecture slides with shared API learning notes and optional Clova transcripts.",
   "license": "MIT",
   "author": "Jangwon Son",
   "main": "electron/main.cjs",
@@ -14,7 +14,7 @@
   },
   "scripts": {
     "start": "electron .",
-    "test": "node --test tests/core.test.cjs tests/desktop.test.cjs tests/ai.test.cjs tests/chatgpt.test.cjs tests/transcript.test.cjs tests/audio.test.cjs",
+    "test": "node --test tests/core.test.cjs tests/desktop.test.cjs tests/ai.test.cjs tests/transcript.test.cjs tests/audio.test.cjs tests/service-server.test.cjs tests/service-client.test.cjs",
     "test:desktop": "node tests/desktop-smoke.cjs",
     "test:assistant": "node tests/assistant-smoke.cjs",
     "test:transcript": "node tests/transcript-smoke.cjs",
@@ -22,7 +22,6 @@
     "test:usability": "node tests/usability-smoke.cjs",
     "test:packaged": "node tests/desktop-smoke.cjs --packaged",
     "build:editor": "node dev/build-editor.mjs",
-    "build:ai": "node dev/build-ai.mjs",
     "build:audio": "node dev/build-audio.mjs",
     "predist": "node dev/prepare-desktop.mjs",
     "prepack": "node dev/prepare-desktop.mjs",
@@ -32,7 +31,8 @@
     "verify:package": "node dev/verify-package.cjs",
     "checksums": "node dev/checksums.cjs",
     "test:regions": "node tests/regions-smoke.cjs",
-    "test:clipboard:browser": "node tests/clipboard-browser-smoke.cjs"
+    "server:start": "node --env-file-if-exists=server/.env server/index.cjs",
+    "server:admin": "node --env-file-if-exists=server/.env server/admin.cjs"
   },
   "devDependencies": {
     "@breezystack/lamejs": "1.2.7",
@@ -46,7 +46,6 @@
     "electron": "45.1.0",
     "electron-builder": "26.18.0",
     "esbuild": "0.28.2",
-    "jose": "6.1.3",
     "playwright": "1.64.1"
   }
 }

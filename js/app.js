@@ -196,8 +196,8 @@
  }
  async function autoSave(){
   const revision=editRevision;
-  try{await dbOperation('readwrite',store=>store.put(snapshot(),'latest'));if(revision===editRevision){dirty=false;$('saveStatus').textContent='자동 저장됨';}}
-  catch(err){$('saveStatus').textContent='자동 저장 실패';status('브라우저에 노트를 저장하지 못했습니다. 완성본을 PPTX 또는 PDF로 내보내 주세요.');}
+  try{await dbOperation('readwrite',store=>store.put(snapshot(),'latest'));if(revision===editRevision){dirty=false;$('saveStatus').textContent='자동 저장됨';}return true;}
+  catch(err){$('saveStatus').textContent='자동 저장 실패';status('브라우저에 노트를 저장하지 못했습니다. 완성본을 PPTX 또는 PDF로 내보내 주세요.');return false;}
  }
  async function recovery(){
   try{
@@ -545,12 +545,12 @@
  $('progressDialog').addEventListener('close',()=>{if(!$('progressDialog').open){clearInterval(progressTimer);progressTimer=null;}});
  window.addEventListener('beforeunload',e=>{if(dirty||busy){e.preventDefault();e.returnValue='';}});
  assistant=window.StudioAssistant.create({
-  get:()=>({slides,title,transcript}),changed:touch,notify:message=>{status(message);toast(message);},
+  get:()=>({slides,title,transcript}),changed:touch,persist:autoSave,notify:message=>{status(message);toast(message);},
   openTranscript:()=>speechUI.open(()=>assistant.open()),
   apply:(request,text,mode)=>{const result=window.StudioAI.applyReply(slides,request,text,C.blankSlide,mode,transcript);remember('AI 보완 반영',true);slides=result.slides;touch();render();return result;},
   work:async task=>{
    if(busy)throw new Error('진행 중인 작업이 끝난 뒤 다시 시도해 주세요.');
-   busy=true;controller=new AbortController();updateButtons();progress('ChatGPT가 강의자료를 보완하고 있습니다','원본 슬라이드와 필기를 읽습니다.',0);
+   busy=true;controller=new AbortController();updateButtons();progress('AI가 강의자료를 보완하고 있습니다','원본 슬라이드와 필기를 읽습니다.',0);
    try{await task({signal:controller.signal,report:progress});}
    finally{await autoSave();controller=null;busy=false;$('progressDialog').close();updateButtons();}
   }

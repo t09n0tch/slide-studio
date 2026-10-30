@@ -12,5 +12,10 @@ test-results/
 *.log
 .env
 .env.*
+!server/.env.example
+server/data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
 *.p12
 *.pfx

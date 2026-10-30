@@ -1,0 +1,10 @@
+.git
+node_modules
+dist
+build
+test-results
+server/.env
+server/data
+*.sqlite*
+*.mp4
+*.mp3

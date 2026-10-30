@@ -76,7 +76,7 @@
   </aside>
  </div>
 </section>
-<footer class="status-bar"><span id="status">영상 추출은 로컬에서 처리합니다. AI 보완은 선택한 슬라이드를 전송합니다.</span><span>v0.10.2 · 로컬 실행</span></footer>
+<footer class="status-bar"><span id="status">영상 추출은 로컬에서 처리합니다. AI 보완은 선택한 슬라이드를 전송합니다.</span><span>v0.11.0 · 로컬 실행</span></footer>
 <input id="videoFile" type="file" accept="video/*,.mp4,.m4v,.webm,.mov" hidden><input id="notesFile" type="file" accept=".md,.markdown,.txt,text/plain,text/markdown" hidden>
 <dialog id="cropDialog" class="settings-dialog crop-dialog" aria-labelledby="cropTitle">
  <div class="dialog-title"><h2 id="cropTitle">슬라이드 영역</h2><button id="closeCrop" class="icon-button" aria-label="닫기">×</button></div>
@@ -101,35 +101,15 @@
 </dialog>
 <dialog id="progressDialog" class="progress-dialog"><div class="progress-icon">◌</div><h2 id="progressTitle">화면을 확인하고 있습니다</h2><p id="progressDetail"></p><div class="progress-summary"><span id="progressPercent" class="progress-percent" aria-live="polite">0%</span><span id="progressEta" class="progress-eta">남은 시간 계산 중</span></div><progress id="progressBar" max="100" value="0" aria-label="슬라이드 준비 진행률"></progress><button id="cancelWork">취소</button></dialog>
 <dialog id="aiDialog" class="settings-dialog ai-dialog" aria-labelledby="aiTitle">
- <div class="dialog-title"><h2 id="aiTitle">강의자료를 어떻게 보완할까요?</h2><button id="aiClose" class="icon-button" aria-label="AI 보완 닫기">×</button></div>
- <div id="aiChoices" class="ai-choices">
-  <button id="aiChoosePaid" class="ai-choice"><strong>ChatGPT로 자동 보완</strong><span>지원되는 Plus·Pro 계정으로 로그인</span><small>추출부터 우측 노트·보완 슬라이드까지 이어서 만듭니다.</small></button>
-  <button id="aiChooseFree" class="ai-choice"><strong>무료 계정으로 보완</strong><span>ChatGPT에 자료를 보내고 답변 한 번 붙여넣기</span><small>첨부 이미지와 요청문은 앱이 준비하고, 결과도 자동 배치합니다.</small></button>
- </div>
- <section id="aiPaidPanel" hidden>
-  <p>지원되는 ChatGPT 계정의 사용량으로 우측 노트와 보완 슬라이드를 만듭니다. 로그인은 기본 브라우저에서 진행합니다.</p>
-  <div class="ai-account"><span id="aiAccountStatus">연결되지 않음</span><div class="ai-inline"><button id="aiSignIn" class="chatgpt-signin">Continue with ChatGPT</button><button id="aiCancelLogin" hidden>연결 취소</button></div></div>
-  <div id="aiAccountControls" class="ai-inline" hidden><label class="sr-only" for="aiAccount">ChatGPT 계정</label><select id="aiAccount"></select><button id="aiAddAccount" class="quiet">계정 추가</button><button id="aiDisconnect" class="quiet">연결 해제</button></div>
-  <div id="aiPlanWelcome" class="ai-notice" hidden>이 앱의 AI 요청은 연결한 ChatGPT 플랜의 사용량을 사용합니다. ChatGPT 설정에서 앱별 한도를 관리할 수 있습니다.<button id="aiAcknowledge" class="text-button">확인</button></div>
-  <label for="aiModel">사용할 모델</label><div class="ai-inline"><select id="aiModel" disabled><option value="">로그인 후 사용할 수 있는 모델을 확인합니다</option></select><button id="aiRefreshModels" class="quiet">새로고침</button></div>
-  <label class="check-label ai-consent"><input id="aiConsent" type="checkbox">슬라이드 이미지·기존 노트·가져온 음성 기록을 OpenAI로 보내고, 내 ChatGPT 사용량으로 보완합니다.</label>
-  <div class="ai-actions"><button id="aiPaidStart" class="primary" disabled>추출하고 자동 보완</button><button id="aiUsage" class="quiet">사용량 관리</button></div>
-  <p id="aiPaidSummary" class="micro"></p><button id="aiSwitchFree" class="text-button">무료 계정 방식으로 이어가기</button>
- </section>
- <section id="aiFreePanel" hidden>
-  <p id="aiFreeIntro">앱이 보낼 자료를 준비합니다. ChatGPT에서 답변의 복사 버튼을 누른 뒤 돌아오면 됩니다.</p>
-  <div class="ai-batch-heading"><strong id="aiBatchSummary">원본 슬라이드를 추출한 뒤 준비합니다</strong><label>한 번에 <select id="aiBatchSize" aria-label="한 번에 보완할 슬라이드 수"><option value="4">4장 · 기본</option><option value="2">2장 · 작은 글씨</option><option value="1">1장 · 자세히</option></select></label></div>
-  <ol class="ai-steps">
-   <li><strong>보낼 자료 복사</strong><p id="aiPrepareHint">처음에는 텍스트만 복사합니다. ChatGPT에 먼저 붙여넣고, ‘이미지 복사’를 눌러 같은 메시지에 이미지를 추가한 뒤 전송하세요.</p><button id="aiPrepare" class="primary">추출하고 텍스트 복사</button>
-    <div id="aiPrepared" hidden><img id="aiSheetPreview" alt="ChatGPT에 첨부할 슬라이드 묶음"><p id="aiPreparedName" class="micro"></p><div class="ai-inline"><button id="aiCopyImage" class="quiet">이미지 복사</button><button id="aiCopyPrompt" class="quiet">텍스트 복사</button></div><details><summary>요청문 직접 복사 · 파일로 저장</summary><textarea id="aiPrompt" readonly aria-label="ChatGPT에 보낼 요청문"></textarea><button id="aiSaveImage" type="button">필요할 때만 이미지 파일로 저장</button></details></div>
-   </li>
-   <li><strong>답변 전체를 한 번에 반영</strong><p>ChatGPT 답변의 코드 블록 복사 버튼을 누르세요. 아래 버튼이 클립보드의 답변을 읽어 노트와 보완 슬라이드에 배치합니다.</p><button id="aiPasteApply" class="primary" disabled>답변 붙여넣고 반영</button><details><summary>직접 붙여넣기 또는 결과 파일 선택</summary><textarea id="aiReply" aria-label="ChatGPT 답변 전체" maxlength="600000" placeholder="ChatGPT의 답변 전체를 여기에 붙여넣어도 됩니다."></textarea><button id="aiReplyFileButton">결과 파일 선택</button><input id="aiReplyFile" type="file" accept=".json,.txt,.md" hidden></details></li>
-  </ol>
-  <p id="aiFreeSummary" class="ai-notice" aria-live="polite">반영한 노트는 자동 저장됩니다. 한도에 도달하면 나중에 이어갈 수 있습니다.</p><button id="aiSwitchPaid" class="text-button">ChatGPT 로그인으로 자동 보완하기</button>
- </section>
- <div class="speech-ai-entry"><p id="aiSpeechSummary" class="micro">교수님 설명도 넣으려면 클로바노트 스크립트를 먼저 가져오세요.</p><button id="aiTranscriptOpen" type="button">교수님 음성 가져오기</button></div>
+ <div class="dialog-title"><h2 id="aiTitle">AI로 강의자료 보완</h2><button id="aiClose" class="icon-button" aria-label="닫기">×</button></div>
+ <p id="aiBatchSummary" class="micro"></p>
+ <div class="ai-account"><span id="aiAccountStatus">연결을 확인하고 있습니다.</span></div>
+ <details id="aiConnection"><summary>AI 연결 설정</summary><p class="micro">운영자가 전달한 초대 코드를 한 번 입력하면 다음에도 연결을 유지합니다.</p><label for="aiInvite">초대 코드</label><div class="ai-inline"><input id="aiInvite" type="password" autocomplete="off" spellcheck="false" placeholder="초대 코드 붙여넣기"><button id="aiConnect">연결</button><button id="aiDisconnect" class="quiet" hidden>연결 해제</button></div></details>
+ <p id="aiQuota" class="micro"></p>
+ <div class="ai-actions"><button id="aiStart" class="primary" disabled>AI 보완하기</button></div>
+ <div class="speech-ai-entry"><p id="aiSpeechSummary" class="micro">교수님 설명도 넣으려면 클로바노트 원문을 가져오세요.</p><button id="aiTranscriptOpen" type="button">교수님 음성 가져오기</button></div>
  <p id="aiError" class="ai-error" role="alert" hidden></p>
- <div class="ai-bottom"><span id="aiSourceNotice" class="micro">AI 학습 보완 · 교수님 음성은 포함되지 않습니다.</span><button id="aiSkip" class="quiet">보완 없이 슬라이드만 추출</button></div>
+ <div class="ai-bottom"><span id="aiSourceNotice" class="micro"></span><button id="aiSkip" class="quiet">보완 없이 슬라이드만 추출</button></div>
 </dialog>
 <dialog id="speechDialog" class="settings-dialog speech-dialog" aria-labelledby="speechTitle">
  <div class="dialog-title"><h2 id="speechTitle">클로바노트로 교수님 음성 가져오기</h2><button id="speechClose" class="icon-button" aria-label="닫기">×</button></div>

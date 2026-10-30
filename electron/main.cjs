@@ -3,7 +3,8 @@ const path = require('node:path');
 const fs = require('node:fs');
 const { pathToFileURL } = require('node:url');
 const { APP_URL, assetPath, downloadPath } = require('./paths.cjs');
-const { createChatGPT, publicError } = require('./chatgpt.cjs');
+const { createService } = require('./service.cjs');
+const { publicError } = require('../shared/service-protocol.cjs');
 const { createAudio, audioToolsPath, copyAudioFile } = require('./audio.cjs');
 
 app.setName('Slide Studio');
@@ -16,7 +17,7 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 let window;
-let chatgpt;
+let service;
 let audio;
 const pendingDownloads = new Set();
 const hasLock = app.requestSingleInstanceLock();
@@ -38,7 +39,7 @@ else {
       webPreferences: { preload: path.join(__dirname, 'preload.cjs'), nodeIntegration: false, contextIsolation: true, sandbox: true, backgroundThrottling: false }
     });
     window.once('ready-to-show', () => window.show());
-    window.on('closed', () => { chatgpt?.cancel(); audio?.reset().catch(()=>{}); window = null; });
+    window.on('closed', () => { service?.cancel(); audio?.reset().catch(()=>{}); window = null; });
     window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
     window.webContents.on('will-navigate', (event, url) => { if (url !== APP_URL) event.preventDefault(); });
     window.webContents.on('will-attach-webview', event => event.preventDefault());
@@ -55,7 +56,7 @@ else {
   }
 
   app.whenReady().then(async () => {
-    chatgpt = createChatGPT({storageDir:path.join(userData,'chatgpt'),safeStorage,openBrowser:url=>shell.openExternal(url)});
+    service = createService({storageDir:path.join(userData,'service'),safeStorage});
     audio=createAudio({directory:path.join(userData,'audio-temporary'),ffmpeg:audioToolsPath({packaged:app.isPackaged,resources:process.resourcesPath,root:app.getAppPath()}),report:value=>{if(window&&!window.isDestroyed())window.webContents.send('studio:audio-progress',value);}});
     await audio.reset();
     ipcMain.handle('studio:audio',async(event,method,payload)=>{
@@ -77,36 +78,18 @@ else {
         return{ok:true,value};
       }catch(error){return{ok:false,error:{code:error.code||'audio_failed',message:error.code==='ENOENT'?'음성 파일을 다시 준비해 주세요.':error.message?.startsWith('Command failed')?'파일을 복사하지 못했습니다. MP3를 끌어놓거나 파일 위치를 열어 첨부해 주세요.':error.message||'음성 파일 작업을 완료하지 못했습니다.'}};}
     });
-    ipcMain.handle('studio:assistant', async (event, method, payload) => {
-      if (!window || event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || event.senderFrame.url !== APP_URL) {
-        return {ok:false,error:{code:'invalid_sender',message:'지원하지 않는 화면입니다.'}};
-      }
+    ipcMain.handle('studio:service', async (event, method, payload) => {
+      if (!window || event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || event.senderFrame.url !== APP_URL) return {ok:false,error:{code:'invalid_sender',message:'지원하지 않는 화면입니다.'}};
       try {
         let value;
-        if(method==='session')value=await chatgpt.session();
-        else if(method==='signIn') {
-          if(payload && (typeof payload!=='object' || (payload.profileId!==undefined && (typeof payload.profileId!=='string'||payload.profileId.length>100)) || (payload.newProfile!==undefined && typeof payload.newProfile!=='boolean')))throw new Error();
-          value=await chatgpt.signIn(payload);
-        }
-        else if(method==='selectProfile'){if(typeof payload!=='string'||payload.length>100)throw new Error();value=await chatgpt.selectProfile(payload);}
-        else if(method==='disconnect')value=await chatgpt.disconnect();
-        else if(method==='models')value=await chatgpt.models();
-        else if(method==='generate')value=await chatgpt.generate(payload);
-        else if(method==='cancel')chatgpt.cancel();
-        else if(method==='openChatGPT')await shell.openExternal('https://chatgpt.com/');
-        else if(method==='openUsage')await shell.openExternal('https://chatgpt.com/settings/usage');
-        else if(method==='copyText'){if(typeof payload!=='string'||payload.length>600000)throw new Error();await clipboard.writeText(payload);}
-        else if(method==='copyImage'){
-          if(typeof payload!=='string'||payload.length>32*1024*1024||!/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(payload))throw new Error('복사할 이미지 형식이 올바르지 않습니다.');
-          const png=Buffer.from(payload.slice('data:image/png;base64,'.length),'base64');
-          if(png.length<24||!png.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]))||png.toString('ascii',12,16)!=='IHDR')throw new Error('PNG 이미지를 읽지 못했습니다.');
-          const width=png.readUInt32BE(16),height=png.readUInt32BE(20);if(!width||!height||width>8192||height>8192||width*height>20000000)throw new Error('복사할 이미지가 너무 큽니다. 한 번에 보낼 슬라이드를 줄여 주세요.');
-          await clipboard.write([new ClipboardItem({'image/png':new Blob([png],{type:'image/png'})})]);
-        }
-        else if(method==='readText')value=(await clipboard.readText()).slice(0,600001);
-        else throw new Error();
+        if(method==='session')value=await service.session();
+        else if(method==='connect')value=await service.connect(payload);
+        else if(method==='disconnect')value=await service.disconnect();
+        else if(method==='generate')value=await service.generate(payload);
+        else if(method==='cancel')service.cancel();
+        else throw Error();
         return {ok:true,value};
-      } catch(error) {return {ok:false,error:publicError(error)};}
+      }catch(error){return {ok:false,error:publicError(error)};}
     });
     protocol.handle('app', async request => {
       const file = assetPath(app.getAppPath(), request.url);

@@ -8,7 +8,7 @@ module.exports = {
   extraResources:[{from:`build/audio-tools/${process.platform}-\${arch}`,to:'audio-tools'},{from:'build/audio-tools/sources',to:'audio-sources'}],
   files: [
     'index.html', '*.css', 'icon.svg', 'js/**/*', 'vendor/**/*',
-    'electron/**/*', 'build/icon.png', 'package.json', 'LICENSE', 'README.md'
+    'electron/**/*', 'shared/**/*', 'build/icon.png', 'package.json', 'LICENSE', 'README.md'
   ],
   mac: {
     target: ['dmg'],

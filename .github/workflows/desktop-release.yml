@@ -56,7 +56,6 @@ jobs:
           fi
       - run: npm ci
       - run: npm run build:editor
-      - run: npm run build:ai
       - name: Prepare verified audio tools and corresponding sources
         run: npm run build:audio
         timeout-minutes: 8
