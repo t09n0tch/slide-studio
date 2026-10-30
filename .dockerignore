@@ -3,7 +3,10 @@ node_modules
 dist
 build
 test-results
-server/.env
+.env
+.env.*
+**/.env
+**/.env.*
 server/data
 *.sqlite*
 *.mp4
