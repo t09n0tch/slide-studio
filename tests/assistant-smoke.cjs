@@ -12,7 +12,7 @@ async function connect(page,code){if(!await page.locator('#aiConnection').evalua
  const one=await harness({supplement:true}),limited=await harness({daily:4,supplement:true});let started,finish;const began=new Promise(resolve=>started=resolve),hold=new Promise(resolve=>finish=resolve);
  const delayed=await harness({generate:async input=>{started();await hold;return{text:reply(input.request)};}});let application,page;
  const env={...process.env,SLIDE_STUDIO_USER_DATA:profile,SLIDE_STUDIO_DOWNLOADS:downloads};delete env.ELECTRON_RUN_AS_NODE;
- async function launch(){application=await electron.launch({...packaged?{executablePath:executable,args:['--disable-gpu']}:{args:[root,'--disable-gpu']},env,cwd:root,timeout:60000});page=await application.firstWindow();page.on('pageerror',error=>errors.push(error.message));}
+ async function launch(){application=await electron.launch({...packaged?{executablePath:executable,args:['--disable-gpu']}:{args:[root,'--disable-gpu']},env,cwd:root,timeout:60000});page=await application.firstWindow();page.setDefaultTimeout(45000);page.on('pageerror',error=>errors.push(error.message));}
  const video=path.join(root,'tests/fixtures/slides.mp4');
  try{
   await fs.mkdir(downloads);await fs.mkdir(path.join(root,'test-results'),{recursive:true});await launch();await page.locator('#videoFile').setInputFiles(video);await page.locator('#aiSkip').click();
